@@ -26,7 +26,7 @@ Select a mission from the left panel and start coding. Ask me for hints, code re
 *Remember: the struggle is the point. Let's forge something.*`,
 };
 
-const USER_ID = 'DSA_FORGE_MASTER_USER';
+const USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export default function DSAForge() {
   // ... (previous state declarations)
