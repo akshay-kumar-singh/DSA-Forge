@@ -16,6 +16,7 @@ interface ForgeSettingsProps {
   onModelChange: (model: string) => void;
   onFontSizeChange: (size: number) => void;
   onFontFamilyChange: (family: string) => void;
+  onResetForge: () => void;
 }
 
 const FONT_OPTIONS = [
@@ -35,6 +36,7 @@ export default function ForgeSettings({
   onModelChange,
   onFontSizeChange,
   onFontFamilyChange,
+  onResetForge,
 }: ForgeSettingsProps) {
   return (
     <AnimatePresence>
@@ -119,6 +121,16 @@ export default function ForgeSettings({
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Advanced */}
+              <div className="pt-2 border-t border-blue-500/10">
+                <button
+                  onClick={onResetForge}
+                  className="text-[10px] font-bold uppercase text-red-500/50 hover:text-red-500 transition-colors"
+                >
+                  Danger: Reboot Neural Link (Reset Forge)
+                </button>
               </div>
 
               {/* Forge Mode info */}

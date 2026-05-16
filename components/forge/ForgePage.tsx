@@ -8,7 +8,6 @@ import ForgeSettings from './settings/ForgeSettings';
 import type { Message, Language, AIProvider } from '@/lib/types';
 
 interface ForgePageProps {
-  // ... (keeping props same for now)
   selectedProblem: string;
   masteredProblems: string[];
   lastReviewDate: Record<string, string>;
@@ -55,6 +54,7 @@ interface ForgePageProps {
   onModelChange: (m: string) => void;
   onFontSizeChange: (s: number) => void;
   onFontFamilyChange: (f: string) => void;
+  onResetForge: () => void;
 }
 
 export default function ForgePage({
@@ -68,6 +68,7 @@ export default function ForgePage({
   onLanguageChange, onNoteChange, onApproachChange, onOutputClose, onOutputResize, onEditorActivity,
   onInputChange, onSend, onToggleMastered, onClearChat,
   onProviderChange, onModelChange, onFontSizeChange, onFontFamilyChange,
+  onResetForge,
 }: ForgePageProps) {
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
@@ -177,6 +178,7 @@ export default function ForgePage({
         onModelChange={onModelChange}
         onFontSizeChange={onFontSizeChange}
         onFontFamilyChange={onFontFamilyChange}
+        onResetForge={onResetForge}
       />
     </div>
   );

@@ -26,8 +26,10 @@ Select a mission from the left panel and start coding. Ask me for hints, code re
 *Remember: the struggle is the point. Let's forge something.*`,
 };
 
+const USER_ID = 'DSA_FORGE_MASTER_USER';
+
 export default function DSAForge() {
-  // ── View ────────────────────────────────────────────
+  // ... (previous state declarations)
   const [view, setView] = useState<View>('home');
   const [orientation, setOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
 
@@ -55,12 +57,11 @@ export default function DSAForge() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // ── Settings State ──────────────────────────────────
+  // ... (Settings State)
   const [showSettings, setShowSettings] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>(AI_PROVIDERS[0]);
   const [selectedModel, setSelectedModel] = useState(AI_PROVIDERS[0].models[0]);
 
-  // ── Stuck Timer ─────────────────────────────────────
   const lastEditorActivity = useRef<number>(Date.now());
 
   // Responsive orientation
@@ -74,13 +75,10 @@ export default function DSAForge() {
   // ── Supabase: Load Progress ─────────────────────────
   useEffect(() => {
     const load = async () => {
-      let userId = localStorage.getItem('dsa-forge-user-id');
-      if (!userId) { userId = crypto.randomUUID(); localStorage.setItem('dsa-forge-user-id', userId); }
-
       const { data } = await supabase
         .from('progress')
-        .select('code_map, user_notes, mastered_problems, last_review_date, approach_board')
-        .eq('user_id', userId)
+        .select('code_map, user_notes, mastered_problems, last_review_date, approach_board, chat_history')
+        .eq('user_id', USER_ID)
         .single();
 
       if (data) {
@@ -89,24 +87,27 @@ export default function DSAForge() {
         if (data.mastered_problems) setMasteredProblems(data.mastered_problems);
         if (data.last_review_date) setLastReviewDate(data.last_review_date);
         if (data.approach_board)   setApproachBoard(data.approach_board);
-      } else {
-        // localStorage fallback
-        try {
-          const lc = localStorage.getItem('dsa-forge-code');
-          const ln = localStorage.getItem('dsa-forge-notes');
-          const lm = localStorage.getItem('dsa-forge-mastered');
-          const lr = localStorage.getItem('dsa-forge-review');
-          const la = localStorage.getItem('dsa-forge-approach');
-          if (lc) setCodeMap(JSON.parse(lc));
-          if (ln) setUserNotes(JSON.parse(ln));
-          if (lm) setMasteredProblems(JSON.parse(lm));
-          if (lr) setLastReviewDate(JSON.parse(lr));
-          if (la) setApproachBoard(JSON.parse(la));
-        } catch { /* ignore */ }
+        if (data.chat_history && Array.isArray(data.chat_history) && data.chat_history.length > 0) {
+          setMessages(data.chat_history);
+        }
       }
     };
     load();
   }, []);
+
+
+  // ── Fix: Ensure starter code exists for current problem on load ──
+  useEffect(() => {
+    if (view === 'forge') {
+      const key = `${selectedProblem}-${language}`;
+      if (!codeMap[key]) {
+        setCodeMap(prev => ({
+          ...prev,
+          [key]: getStarterCode(selectedProblem, language)
+        }));
+      }
+    }
+  }, [selectedProblem, language, view, codeMap]);
 
   // ── Stuck Timer: 10 min idle → proactive nudge ──────
   useEffect(() => {
@@ -125,37 +126,30 @@ export default function DSAForge() {
   // ── Save ─────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     setIsSaving(true);
-    const toastId = toast.loading('Saving mission progress...');
+    const toastId = toast.loading('Syncing progress with S.H.I.E.L.D. servers...');
     
-    localStorage.setItem('dsa-forge-code',     JSON.stringify(codeMap));
-    localStorage.setItem('dsa-forge-notes',    JSON.stringify(userNotes));
-    localStorage.setItem('dsa-forge-mastered', JSON.stringify(masteredProblems));
-    localStorage.setItem('dsa-forge-review',   JSON.stringify(lastReviewDate));
-    localStorage.setItem('dsa-forge-approach', JSON.stringify(approachBoard));
-
-    let userId = localStorage.getItem('dsa-forge-user-id');
-    if (!userId) { userId = crypto.randomUUID(); localStorage.setItem('dsa-forge-user-id', userId); }
-
     try {
       const { error } = await supabase.from('progress').upsert({
-        user_id: userId,
+        user_id: USER_ID,
         code_map: codeMap,
         user_notes: userNotes,
         mastered_problems: masteredProblems,
         last_review_date: lastReviewDate,
         approach_board: approachBoard,
+        chat_history: messages,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
       if (error) throw error;
-      toast.success('Mission progress synced to S.H.I.E.L.D. servers', { id: toastId });
+      toast.success('Mission progress secured in cloud database.', { id: toastId });
     } catch (error: any) {
       console.error('Supabase save error:', error.message);
-      toast.error('Local save successful, but server sync failed', { id: toastId });
+      toast.error('Server sync failed. Check database connection.', { id: toastId });
     } finally {
       setTimeout(() => setIsSaving(false), 500);
     }
-  }, [codeMap, userNotes, masteredProblems, lastReviewDate, approachBoard]);
+  }, [codeMap, userNotes, masteredProblems, lastReviewDate, approachBoard, messages]);
+
 
   // ── Problem Select ───────────────────────────────────
   const handleSelectProblem = useCallback((prob: string) => {
@@ -172,15 +166,9 @@ export default function DSAForge() {
         : `**${prob}** — Mission loaded. 🎯\n\nEditor is ready. Write your approach on the Approach Board before coding if you'd like my input on your direction. Ask for a hint anytime.`,
     }]);
 
-    // Ensure starter code exists for this problem
-    setCodeMap(prev => {
-      const key = `${prob}-${language}`;
-      if (!prev[key]) {
-        return { ...prev, [key]: getStarterCode(prob, language) };
-      }
-      return prev;
-    });
-  }, [language]);
+    // Code population is handled by the useEffect above
+  }, []);
+
 
   // ── Run Code ─────────────────────────────────────────
   const handleRun = useCallback(async () => {
@@ -336,6 +324,43 @@ export default function DSAForge() {
     });
   };
 
+  // ── Agent Sync ──────────────────────────────────────
+  const handleResetForge = async () => {
+    const confirmed = window.confirm("CAUTION: This will wipe ALL your cloud data for this mission. Proceed?");
+    if (!confirmed) return;
+
+    const { error } = await supabase.from('progress').delete().eq('user_id', USER_ID);
+    if (error) {
+      toast.error('Failed to clear cloud data.');
+    } else {
+      localStorage.clear();
+      toast.info('Neural link severed. Rebooting...');
+      setTimeout(() => window.location.reload(), 1500);
+    }
+  };
+
+  // ── Clear Chat ──────────────────────────────────────
+  const handleClearChat = useCallback(async () => {
+    const confirmed = window.confirm("Reset conversation for all missions? This will clear AI memory in the cloud.");
+    if (!confirmed) return;
+
+    setMessages([INITIAL_MESSAGE]);
+    
+    const toastId = toast.loading('Clearing cloud neural records...');
+    try {
+      const { error } = await supabase.from('progress').upsert({
+        user_id: USER_ID,
+        chat_history: [INITIAL_MESSAGE],
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+      toast.success('AI memory wiped from S.H.I.E.L.D. servers.', { id: toastId });
+    } catch (err) {
+      toast.error('Local chat cleared, but server sync failed.', { id: toastId });
+    }
+  }, []);
+
   // ── Render ───────────────────────────────────────────
   if (view === 'home') {
     return (
@@ -349,15 +374,13 @@ export default function DSAForge() {
 
   return (
     <ForgePage
-      // Problem state
+      // ... (rest of props)
       selectedProblem={selectedProblem}
       masteredProblems={masteredProblems}
       lastReviewDate={lastReviewDate}
       codeMap={codeMap}
       userNotes={userNotes}
       approachBoard={approachBoard}
-
-      // Editor state
       language={language}
       editorFontSize={editorFontSize}
       editorFontFamily={editorFontFamily}
@@ -367,20 +390,13 @@ export default function DSAForge() {
       isRunning={isRunning}
       showNotes={showNotes}
       showApproach={showApproach}
-
-      // Chat state
       messages={messages}
       input={input}
       isLoading={isLoading}
-
-      // Settings state
       showSettings={showSettings}
       selectedProvider={selectedProvider}
       selectedModel={selectedModel}
-
       orientation={orientation}
-
-      // Handlers
       onSelectProblem={handleSelectProblem}
       onGoHome={() => setView('home')}
       onCodeChange={handleCodeChange}
@@ -406,11 +422,12 @@ export default function DSAForge() {
       onInputChange={setInput}
       onSend={handleSend}
       onToggleMastered={handleToggleMastered}
-      onClearChat={() => setMessages([INITIAL_MESSAGE])}
+      onClearChat={handleClearChat}
       onProviderChange={(p) => { setSelectedProvider(p); setSelectedModel(p.models[0]); }}
       onModelChange={setSelectedModel}
       onFontSizeChange={setEditorFontSize}
       onFontFamilyChange={setEditorFontFamily}
+      onResetForge={handleResetForge}
     />
   );
 }
