@@ -1,0 +1,213 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+:root {
+  --bg-base: #0a0a0f;
+  --bg-surface: #0f0f1a;
+  --bg-elevated: #141428;
+  --bg-card: #1a1a2e;
+  --accent-blue: #3b82f6;
+  --accent-blue-dim: #1d4ed8;
+  --accent-blue-glow: rgba(59, 130, 246, 0.25);
+  --accent-red: #ef4444;
+  --accent-red-glow: rgba(239, 68, 68, 0.25);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  --border-subtle: rgba(59, 130, 246, 0.12);
+  --border-default: rgba(59, 130, 246, 0.25);
+  --border-bright: rgba(59, 130, 246, 0.6);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Tech Grid Background ─────────────────────────── */
+.tech-grid {
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Forge Panels ─────────────────────────────────── */
+.forge-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.forge-panel-elevated {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+}
+
+.forge-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.forge-card:hover {
+  border-color: var(--border-default);
+}
+
+/* ── Glow Effects ─────────────────────────────────── */
+.glow-blue {
+  box-shadow: 0 0 12px var(--accent-blue-glow), 0 0 24px rgba(59, 130, 246, 0.1);
+  border-color: var(--accent-blue) !important;
+}
+
+.glow-red {
+  box-shadow: 0 0 12px var(--accent-red-glow);
+  border-color: var(--accent-red) !important;
+}
+
+/* ── Forge Buttons ────────────────────────────────── */
+.forge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 36px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border-default);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.forge-btn:hover:not(:disabled) {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 8px var(--accent-blue-glow);
+  color: #fff;
+}
+
+.forge-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.forge-btn-primary {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #fff;
+}
+
+.forge-btn-primary:hover:not(:disabled) {
+  background: #2563eb;
+  box-shadow: 0 0 16px var(--accent-blue-glow);
+}
+
+.forge-btn-danger {
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+.forge-btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 8px var(--accent-red-glow);
+}
+
+/* ── Animations ───────────────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px var(--accent-blue-glow); opacity: 1; }
+  50%       { box-shadow: 0 0 14px var(--accent-blue-glow), 0 0 28px rgba(59,130,246,0.15); opacity: 0.8; }
+}
+
+@keyframes forge-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scan {
+  from { transform: translateY(-100%); }
+  to   { transform: translateY(200%); }
+}
+
+@keyframes dot-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+.forge-in { animation: forge-in 0.25s ease-out forwards; }
+.pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
+.dot-blink { animation: dot-blink 1.4s ease-in-out infinite; }
+
+/* ── Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.35); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
+
+/* ── Mermaid Diagram Dark Overrides ──────────────── */
+.mermaid-wrap { background: transparent; }
+.mermaid-wrap svg { max-width: 100%; height: auto; }
+
+/* ── Prose / Markdown in Chat ────────────────────── */
+.forge-prose { color: var(--text-primary); font-size: 0.875rem; line-height: 1.7; }
+.forge-prose h1, .forge-prose h2, .forge-prose h3 {
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0.75em 0 0.4em;
+}
+.forge-prose code {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.82em;
+  font-family: var(--font-mono);
+}
+.forge-prose pre {
+  background: #0d1117;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  line-height: 1.6;
+  margin: 0.75em 0;
+}
+.forge-prose pre code { background: transparent; padding: 0; color: #e2e8f0; }
+.forge-prose ul, .forge-prose ol { padding-left: 1.4em; margin: 0.5em 0; }
+.forge-prose li { margin: 0.25em 0; }
+.forge-prose strong { color: #fff; font-weight: 700; }
+.forge-prose a { color: var(--accent-blue); text-decoration: underline; }
+.forge-prose blockquote {
+  border-left: 3px solid var(--accent-blue);
+  padding-left: 12px;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.forge-prose hr { border-color: var(--border-subtle); margin: 1em 0; }
+
+/* ── React Resizable Panels Handles ──────────────── */
+.forge-resize-handle {
+  background: var(--bg-surface);
+  border-color: var(--border-subtle);
+  transition: background 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.forge-resize-handle:hover { background: rgba(59, 130, 246, 0.08); }
