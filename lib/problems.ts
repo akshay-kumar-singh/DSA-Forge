@@ -3,6 +3,10 @@ import type { DSAPattern, ProblemInfo, Language } from './types';
 // All problems kept exactly as-is — same categories, same order
 export const DSA_PATTERNS: DSAPattern[] = [
   {
+    category: "Personal Practice",
+    problems: ["Training: Custom Sandbox"]
+  },
+  {
     category: "Arrays & Hashing",
     problems: ["Training: Arrays & Hashing", "Two Sum", "Contains Duplicate", "Valid Anagram", "Group Anagrams", "Product of Array Except Self", "Longest Consecutive Sequence", "Decode the Slanted Ciphertext"]
   },
@@ -103,11 +107,12 @@ export const PROBLEM_INFO: Record<string, ProblemInfo> = {
   "Training: Linked List": { params: ["head"], example: "head = [1,2,3] -> [1,2,3]" },
   "Training: Trees": { params: ["root"], example: "root = [1,2,3] -> [1,2,3]" },
   "Training: 1-D Dynamic Programming": { params: ["n"], example: "n = 2 -> 2" },
+  "Training: Custom Sandbox": { params: ["...args"], example: "Practice any logic here — interview prep, custom problems, or recruiter questions." },
 };
 
 export const AI_PROVIDERS = [
-  { id: 'gemini', name: 'Gemini', models: ['gemini-3.1-pro-preview', 'gemini-3-flash-preview'] },
   { id: 'mistral', name: 'Mistral', models: ['mistral-large-latest', 'mistral-small-latest', 'codestral-latest'] },
+  { id: 'gemini', name: 'Gemini', models: ['gemini-3.1-pro-preview', 'gemini-3-flash-preview'] },
   { id: 'groq', name: 'Groq', models: ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768'] },
   { id: 'openrouter', name: 'OpenRouter', models: ['mistralai/mistral-7b-instruct:free', 'google/gemma-7b:free', 'meta-llama/llama-3.1-8b-instruct:free', 'meta-llama/llama-3.2-3b-instruct:free'] },
 ];

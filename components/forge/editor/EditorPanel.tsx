@@ -19,6 +19,7 @@ interface EditorPanelProps {
   isAiLoading: boolean;
   showNotes: boolean;
   showApproach: boolean;
+  isMastered: boolean;
   noteValue: string;
   approachValue: string;
   editorFontSize: number;
@@ -36,6 +37,11 @@ interface EditorPanelProps {
   onOutputClose: () => void;
   onOutputResize: (h: number) => void;
   onEditorActivity: () => void;
+  onMarkMastered: () => void;
+  showLeftPanel: boolean;
+  showRightPanel: boolean;
+  onToggleLeftPanel: () => void;
+  onToggleRightPanel: () => void;
 }
 
 export default function EditorPanel({
@@ -49,6 +55,7 @@ export default function EditorPanel({
   isAiLoading,
   showNotes,
   showApproach,
+  isMastered,
   noteValue,
   approachValue,
   editorFontSize,
@@ -66,6 +73,11 @@ export default function EditorPanel({
   onOutputClose,
   onOutputResize,
   onEditorActivity,
+  onMarkMastered,
+  showLeftPanel,
+  showRightPanel,
+  onToggleLeftPanel,
+  onToggleRightPanel,
 }: EditorPanelProps) {
   const editorRef = useRef<unknown>(null);
 
@@ -91,6 +103,7 @@ export default function EditorPanel({
         isAiLoading={isAiLoading}
         showNotes={showNotes}
         showApproach={showApproach}
+        isMastered={isMastered}
         onSave={onSave}
         onRun={onRun}
         onGetIntel={onGetIntel}
@@ -98,6 +111,11 @@ export default function EditorPanel({
         onToggleApproach={onToggleApproach}
         onOpenSettings={onOpenSettings}
         onLanguageChange={onLanguageChange}
+        onMarkMastered={onMarkMastered}
+        showLeftPanel={showLeftPanel}
+        showRightPanel={showRightPanel}
+        onToggleLeftPanel={onToggleLeftPanel}
+        onToggleRightPanel={onToggleRightPanel}
       />
 
       {/* Editor + overlays */}

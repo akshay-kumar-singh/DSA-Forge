@@ -6,27 +6,22 @@ import { clsx } from 'clsx';
 interface ChatInputProps {
   value: string;
   isLoading: boolean;
-  isMastered: boolean;
   onValueChange: (v: string) => void;
   onSend: () => void;
   onQuickAction: (msg: string) => void;
-  onMarkMastered: () => void;
   onClearChat: () => void;
 }
 
 const QUICK_ACTIONS = [
-  { label: 'Get Hint', icon: Zap, msg: 'Give me a hint for this problem.' },
   { label: 'Review Code', icon: MessageSquare, msg: 'Review my current code and tell me what I am doing right and what to improve.' },
 ];
 
 export default function ChatInput({
   value,
   isLoading,
-  isMastered,
   onValueChange,
   onSend,
   onQuickAction,
-  onMarkMastered,
   onClearChat,
 }: ChatInputProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -71,20 +66,6 @@ export default function ChatInput({
             {label}
           </button>
         ))}
-
-        <button
-          onClick={onMarkMastered}
-          disabled={isLoading || isMastered}
-          className={clsx(
-            'forge-btn h-8 text-[10px] gap-1.5',
-            isMastered
-              ? 'border-blue-500/50 text-blue-400 cursor-default'
-              : 'border-green-500/30 text-green-400 hover:border-green-400 hover:shadow-[0_0_8px_rgba(34,197,94,0.15)]'
-          )}
-        >
-          <Zap size={11} />
-          {isMastered ? 'Mastered ✓' : 'Mark Mastered'}
-        </button>
 
         <button
           onClick={onClearChat}

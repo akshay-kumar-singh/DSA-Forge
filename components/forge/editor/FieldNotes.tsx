@@ -58,15 +58,22 @@ export default function FieldNotes({ show, problem, noteValue, onNoteChange, onC
             </div>
 
             {/* TlDraw whiteboard — bottom half */}
-            <div className="h-1/2 relative">
-              <span className="absolute top-2 left-3 z-10 text-[9px] font-bold uppercase tracking-widest text-[#475569] pointer-events-none">
-                Whiteboard
-              </span>
-              <Tldraw
-                key={problem}
-                inferDarkMode
-                persistenceKey={`dsa-forge-sketch-${problem}`}
-              />
+            <div className="h-1/2 relative border-t border-blue-500/10 tldraw-container">
+              <div className="absolute top-2 left-3 z-10 flex flex-col gap-1 pointer-events-none">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[#475569]">
+                  Whiteboard
+                </span>
+                <span className="text-[8px] text-[#334155] uppercase">
+                  Ctrl+Z to Undo • Del to Delete
+                </span>
+              </div>
+              <div className="absolute inset-0 overflow-hidden">
+                <Tldraw
+                  key={`tldraw-${problem}`}
+                  inferDarkMode
+                  persistenceKey={`dsa-forge-sketch-v2-${problem}`}
+                />
+              </div>
             </div>
           </div>
         </motion.div>

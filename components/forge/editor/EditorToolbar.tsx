@@ -1,6 +1,4 @@
-'use client';
-
-import { Save, Play, Settings, StickyNote, Cpu, Eye, Loader2 } from 'lucide-react';
+import { Save, Play, Settings, StickyNote, Cpu, Eye, Loader2, Menu, MessageSquare } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { Language } from '@/lib/types';
 
@@ -12,6 +10,8 @@ interface EditorToolbarProps {
   isAiLoading: boolean;
   showNotes: boolean;
   showApproach: boolean;
+  showLeftPanel: boolean;
+  showRightPanel: boolean;
   onSave: () => void;
   onRun: () => void;
   onGetIntel: () => void;
@@ -19,6 +19,8 @@ interface EditorToolbarProps {
   onToggleApproach: () => void;
   onOpenSettings: () => void;
   onLanguageChange: (lang: Language) => void;
+  onToggleLeftPanel: () => void;
+  onToggleRightPanel: () => void;
 }
 
 export default function EditorToolbar({
@@ -29,6 +31,8 @@ export default function EditorToolbar({
   isAiLoading,
   showNotes,
   showApproach,
+  showLeftPanel,
+  showRightPanel,
   onSave,
   onRun,
   onGetIntel,
@@ -36,11 +40,22 @@ export default function EditorToolbar({
   onToggleApproach,
   onOpenSettings,
   onLanguageChange,
+  onToggleLeftPanel,
+  onToggleRightPanel,
 }: EditorToolbarProps) {
   return (
     <header className="h-14 border-b border-blue-500/10 flex items-center justify-between px-4 shrink-0 bg-[#0f0f1a]">
       {/* Problem name + AI watching indicator */}
       <div className="flex items-center gap-3 min-w-0">
+        {!showLeftPanel && (
+          <button
+            onClick={onToggleLeftPanel}
+            className="forge-btn w-9 h-9 px-0 flex items-center justify-center border-blue-500/30 text-blue-400"
+            title="Open Missions"
+          >
+            <Menu size={16} />
+          </button>
+        )}
         <h2 className="font-black text-sm uppercase tracking-tight text-[#e2e8f0] truncate max-w-[220px]">
           {problem}
         </h2>
@@ -85,15 +100,15 @@ export default function EditorToolbar({
           <span className="hidden xl:inline">Notes</span>
         </button>
 
-        {/* Deploy (Run Code) */}
+        {/* Run Code */}
         <button
           onClick={onRun}
           disabled={isRunning}
           className="forge-btn forge-btn-primary h-9"
-          title="Deploy (Ctrl+Enter)"
+          title="Run Code (Ctrl+Enter)"
         >
           {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} className="fill-current" />}
-          <span className="hidden sm:inline">{isRunning ? 'Running' : 'Deploy'}</span>
+          <span className="hidden sm:inline">{isRunning ? 'Running' : 'Run'}</span>
         </button>
 
         {/* Get Intel */}
@@ -126,8 +141,19 @@ export default function EditorToolbar({
           className="forge-btn h-9 w-9 px-0 flex items-center justify-center"
           title="Settings"
         >
-          <Settings size={14} />
+          <Settings size={18} />
         </button>
+
+        {/* Chat Toggle */}
+        {!showRightPanel && (
+          <button
+            onClick={onToggleRightPanel}
+            className="forge-btn w-9 h-9 px-0 flex items-center justify-center border-blue-500/30 text-blue-400"
+            title="Open AI Chat"
+          >
+            <MessageSquare size={16} />
+          </button>
+        )}
       </div>
     </header>
   );

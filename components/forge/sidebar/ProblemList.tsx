@@ -8,6 +8,7 @@ interface ProblemListProps {
   selectedProblem: string;
   masteredProblems: string[];
   onSelectProblem: (p: string) => void;
+  onToggleMastered: (p: string) => void;
 }
 
 const DIFF_CONFIG = {
@@ -16,7 +17,12 @@ const DIFF_CONFIG = {
   hard:   { label: 'H', color: 'text-red-400',    bg: 'bg-red-400/10' },
 };
 
-export default function ProblemList({ selectedProblem, masteredProblems, onSelectProblem }: ProblemListProps) {
+export default function ProblemList({ 
+  selectedProblem, 
+  masteredProblems, 
+  onSelectProblem,
+  onToggleMastered 
+}: ProblemListProps) {
   return (
     <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-3 pt-2">
       {DSA_PATTERNS.map((pattern, i) => (
@@ -24,7 +30,7 @@ export default function ProblemList({ selectedProblem, masteredProblems, onSelec
           {/* Category header */}
           <div className="flex items-center gap-1.5 px-1 py-1.5">
             <div className="w-1 h-3 bg-blue-500 rounded-full" />
-            <span className="text-[9px] font-black uppercase tracking-widest text-blue-400/80">
+            <span className="text-[10px] font-black uppercase tracking-widest text-blue-400/80">
               {pattern.category}
             </span>
           </div>
@@ -39,11 +45,23 @@ export default function ProblemList({ selectedProblem, masteredProblems, onSelec
             const prereqs = info?.prerequisites;
 
             return (
-              <div key={j}>
+              <div key={j} className="flex items-center gap-1.5">
+                {/* Completion Checkbox */}
+                {!isTraining && (
+                  <input
+                    type="checkbox"
+                    checked={isMastered}
+                    onChange={() => onToggleMastered(prob)}
+                    className="w-3.5 h-3.5 rounded bg-[#0a0a0f] border-blue-500/30 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer transition-all hover:border-blue-500/60 ml-1.5"
+                    title={isMastered ? "Mark as Incomplete" : "Mark as Completed"}
+                  />
+                )}
+                {isTraining && <div className="w-3.5 h-3.5 ml-1.5" />}
+
                 <button
                   onClick={() => onSelectProblem(prob)}
                   className={clsx(
-                    'w-full flex items-center gap-2 px-2 py-2 rounded text-left transition-all duration-150 group',
+                    'flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded text-left transition-all duration-150 group',
                     isSelected
                       ? 'bg-blue-500/12 border border-blue-500/40 glow-blue'
                       : 'border border-transparent hover:bg-blue-500/6 hover:border-blue-500/15'
@@ -51,33 +69,25 @@ export default function ProblemList({ selectedProblem, masteredProblems, onSelec
                 >
                   {/* Icon */}
                   <span className="shrink-0 text-[14px]">
-                    {isTraining ? (
-                      <BookOpen size={12} className="text-blue-400/60 mt-0.5" />
-                    ) : (
-                      <div className={clsx(
-                        'w-1.5 h-1.5 rounded-full shrink-0 mt-0.5',
-                        isMastered ? 'bg-blue-400' : 'bg-[#475569] group-hover:bg-blue-400/50'
-                      )} />
+                    {isTraining && (
+                      <BookOpen size={14} className="text-blue-400/60" />
                     )}
                   </span>
 
                   {/* Label */}
                   <span className={clsx(
-                    'flex-1 text-[11px] font-medium truncate',
+                    'flex-1 text-xs font-bold truncate tracking-wide',
                     isSelected ? 'text-blue-300' : 'text-[#94a3b8] group-hover:text-[#cbd5e1]'
                   )}>
                     {isTraining ? prob.replace('Training: ', '') : prob}
                   </span>
 
                   {/* Right side badges */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {diff && !isTraining && (
-                      <span className={clsx('text-[8px] font-black px-1 py-0.5 rounded', diff.color, diff.bg)}>
+                      <span className={clsx('text-[9px] font-black px-1.5 py-0.5 rounded', diff.color, diff.bg)}>
                         {diff.label}
                       </span>
-                    )}
-                    {isMastered && (
-                      <Zap size={10} className="text-blue-400" />
                     )}
                   </div>
                 </button>

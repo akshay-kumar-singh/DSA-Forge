@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, ChevronRight, Loader2 } from 'lucide-react';
+import { Shield, ChevronRight, Loader2, X } from 'lucide-react';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import type { Message } from '@/lib/types';
@@ -16,9 +16,10 @@ interface ChatPanelProps {
   masteredProblems: string[];
   onInputChange: (v: string) => void;
   onSend: (override?: string) => void;
-  onMarkMastered: () => void;
+  onToggleMastered: () => void;
   onClearChat: () => void;
   onSelectProblem: (p: string) => void;
+  onClose: () => void;
 }
 
 export default function ChatPanel({
@@ -29,9 +30,10 @@ export default function ChatPanel({
   masteredProblems,
   onInputChange,
   onSend,
-  onMarkMastered,
+  onToggleMastered,
   onClearChat,
   onSelectProblem,
+  onClose,
 }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMastered = masteredProblems.includes(selectedProblem);
@@ -65,11 +67,13 @@ export default function ChatPanel({
               </div>
             </div>
           </div>
-          {isMastered && (
-            <span className="text-[9px] font-black px-2 py-1 rounded bg-blue-500/15 border border-blue-500/30 text-blue-400 uppercase tracking-wider">
-              ⚡ Mastered
-            </span>
-          )}
+          <button
+            onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/5 text-[#475569] hover:text-[#94a3b8] transition-colors"
+            title="Close Panel"
+          >
+            <X size={14} />
+          </button>
         </div>
 
         {/* Prerequisites */}
@@ -142,11 +146,9 @@ export default function ChatPanel({
       <ChatInput
         value={input}
         isLoading={isLoading}
-        isMastered={isMastered}
         onValueChange={onInputChange}
         onSend={() => onSend()}
         onQuickAction={handleQuickAction}
-        onMarkMastered={onMarkMastered}
         onClearChat={onClearChat}
       />
     </div>

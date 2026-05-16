@@ -1,8 +1,5 @@
-'use client';
-
-import { Target, Home } from 'lucide-react';
+import { Target, X } from 'lucide-react';
 import ForgeStats from './ForgeStats';
-import SpacedRepetition from './SpacedRepetition';
 import ProblemList from './ProblemList';
 import { DSA_PATTERNS } from '@/lib/problems';
 
@@ -13,6 +10,8 @@ interface MissionsSidebarProps {
   codeMap: Record<string, string>;
   onSelectProblem: (p: string) => void;
   onGoHome: () => void;
+  onToggleMastered: (p: string) => void;
+  onClose: () => void;
 }
 
 const TOTAL_PROBLEMS = DSA_PATTERNS.reduce((acc, p) => acc + p.problems.length, 0);
@@ -24,9 +23,9 @@ export default function MissionsSidebar({
   codeMap,
   onSelectProblem,
   onGoHome,
+  onToggleMastered,
+  onClose,
 }: MissionsSidebarProps) {
-  const attemptedCount = Object.keys(codeMap).length;
-
   return (
     <div className="h-full flex flex-col forge-panel border-r border-blue-500/10">
       {/* Header */}
@@ -36,12 +35,11 @@ export default function MissionsSidebar({
           <span className="text-sm font-black uppercase tracking-widest text-[#e2e8f0]">Missions</span>
         </div>
         <button
-          onClick={onGoHome}
-          className="forge-btn h-7 px-2 text-[9px]"
-          title="Back to Home"
+          onClick={onClose}
+          className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/5 text-[#475569] hover:text-[#94a3b8] transition-colors"
+          title="Close Sidebar"
         >
-          <Home size={12} />
-          <span className="hidden xl:inline">Home</span>
+          <X size={14} />
         </button>
       </div>
 
@@ -49,13 +47,6 @@ export default function MissionsSidebar({
       <ForgeStats
         masteredCount={masteredProblems.length}
         totalProblems={TOTAL_PROBLEMS}
-        attemptedCount={attemptedCount}
-      />
-
-      {/* Spaced Repetition */}
-      <SpacedRepetition
-        lastReviewDate={lastReviewDate}
-        onSelectProblem={onSelectProblem}
       />
 
       {/* Problem List */}
@@ -63,6 +54,7 @@ export default function MissionsSidebar({
         selectedProblem={selectedProblem}
         masteredProblems={masteredProblems}
         onSelectProblem={onSelectProblem}
+        onToggleMastered={onToggleMastered}
       />
     </div>
   );

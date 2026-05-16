@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 import { buildForgeSystemPrompt } from '@/lib/forge-ai';
 import { runCode as runCodeFn } from '@/lib/code-runner';
@@ -124,6 +125,8 @@ export default function DSAForge() {
   // ── Save ─────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     setIsSaving(true);
+    const toastId = toast.loading('Saving mission progress...');
+    
     localStorage.setItem('dsa-forge-code',     JSON.stringify(codeMap));
     localStorage.setItem('dsa-forge-notes',    JSON.stringify(userNotes));
     localStorage.setItem('dsa-forge-mastered', JSON.stringify(masteredProblems));
@@ -133,18 +136,25 @@ export default function DSAForge() {
     let userId = localStorage.getItem('dsa-forge-user-id');
     if (!userId) { userId = crypto.randomUUID(); localStorage.setItem('dsa-forge-user-id', userId); }
 
-    const { error } = await supabase.from('progress').upsert({
-      user_id: userId,
-      code_map: codeMap,
-      user_notes: userNotes,
-      mastered_problems: masteredProblems,
-      last_review_date: lastReviewDate,
-      approach_board: approachBoard,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' });
+    try {
+      const { error } = await supabase.from('progress').upsert({
+        user_id: userId,
+        code_map: codeMap,
+        user_notes: userNotes,
+        mastered_problems: masteredProblems,
+        last_review_date: lastReviewDate,
+        approach_board: approachBoard,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
 
-    if (error) console.error('Supabase save error:', error.message);
-    setTimeout(() => setIsSaving(false), 1200);
+      if (error) throw error;
+      toast.success('Mission progress synced to S.H.I.E.L.D. servers', { id: toastId });
+    } catch (error: any) {
+      console.error('Supabase save error:', error.message);
+      toast.error('Local save successful, but server sync failed', { id: toastId });
+    } finally {
+      setTimeout(() => setIsSaving(false), 500);
+    }
   }, [codeMap, userNotes, masteredProblems, lastReviewDate, approachBoard]);
 
   // ── Problem Select ───────────────────────────────────
@@ -173,22 +183,47 @@ export default function DSAForge() {
   }, [language]);
 
   // ── Run Code ─────────────────────────────────────────
-  const handleRun = useCallback(() => {
+  const handleRun = useCallback(async () => {
     const currentCode = codeMap[`${selectedProblem}-${language}`] ?? getStarterCode(selectedProblem, language);
     setIsRunning(true);
-    const result = runCodeFn(currentCode, language, selectedProblem);
-    setOutput(result);
-    setIsRunning(false);
+    const toastId = toast.loading('Executing mission code...');
+    try {
+      const result = await runCodeFn(currentCode, language, selectedProblem);
+      setOutput(result);
+      if (result.includes('❌')) {
+        toast.error('Execution failed', { id: toastId });
+      } else {
+        toast.success('Execution complete', { id: toastId });
+      }
+    } catch (err) {
+      toast.error('Execution error', { id: toastId });
+    } finally {
+      setIsRunning(false);
+    }
   }, [codeMap, selectedProblem, language]);
 
-  // ── Mark Mastered ────────────────────────────────────
-  const handleMarkMastered = useCallback(() => {
-    if (masteredProblems.includes(selectedProblem)) return;
-    const updated = [...masteredProblems, selectedProblem];
+  // ── Toggle Mastered ─────────────────────────────────
+  const handleToggleMastered = useCallback((prob: string) => {
+    const isMastered = masteredProblems.includes(prob);
+    let updated: string[];
+    
+    if (isMastered) {
+      updated = masteredProblems.filter(p => p !== prob);
+      toast.info(`Mission status updated: ${prob} is back on the active list.`);
+    } else {
+      updated = [...masteredProblems, prob];
+      toast.success('MISSION MASTERED! Status updated in S.H.I.E.L.D. database.', {
+        description: `You have conquered ${prob}.`,
+        duration: 5000,
+      });
+    }
+    
     setMasteredProblems(updated);
-    setLastReviewDate(prev => ({ ...prev, [selectedProblem]: new Date().toISOString() }));
-    handleSend(`I've completed the ${selectedProblem} mission and I'm marking it as mastered.`);
-  }, [masteredProblems, selectedProblem]);
+    setLastReviewDate(prev => ({ ...prev, [prob]: new Date().toISOString() }));
+    
+    // Auto-save to ensure the status is persisted immediately
+    setTimeout(() => handleSave(), 100);
+  }, [masteredProblems, handleSave]);
 
   // ── Get Intel ────────────────────────────────────────
   const handleGetIntel = useCallback(() => {
@@ -352,8 +387,14 @@ export default function DSAForge() {
       onSave={handleSave}
       onRun={handleRun}
       onGetIntel={handleGetIntel}
-      onToggleNotes={() => setShowNotes(s => !s)}
-      onToggleApproach={() => setShowApproach(s => !s)}
+      onToggleNotes={() => {
+        if (!showNotes) setShowApproach(false);
+        setShowNotes(s => !s);
+      }}
+      onToggleApproach={() => {
+        if (!showApproach) setShowNotes(false);
+        setShowApproach(s => !s);
+      }}
       onOpenSettings={() => setShowSettings(true)}
       onCloseSettings={() => setShowSettings(false)}
       onLanguageChange={handleLanguageChange}
@@ -364,7 +405,7 @@ export default function DSAForge() {
       onEditorActivity={() => { lastEditorActivity.current = Date.now(); }}
       onInputChange={setInput}
       onSend={handleSend}
-      onMarkMastered={handleMarkMastered}
+      onToggleMastered={handleToggleMastered}
       onClearChat={() => setMessages([INITIAL_MESSAGE])}
       onProviderChange={(p) => { setSelectedProvider(p); setSelectedModel(p.models[0]); }}
       onModelChange={setSelectedModel}

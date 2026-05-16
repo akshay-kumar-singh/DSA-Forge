@@ -1,7 +1,6 @@
-'use client';
-
+import { useState } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Menu, X, Layout, MessageSquare } from 'lucide-react';
 import MissionsSidebar from './sidebar/MissionsSidebar';
 import EditorPanel from './editor/EditorPanel';
 import ChatPanel from './chat/ChatPanel';
@@ -9,15 +8,13 @@ import ForgeSettings from './settings/ForgeSettings';
 import type { Message, Language, AIProvider } from '@/lib/types';
 
 interface ForgePageProps {
-  // Problem state
+  // ... (keeping props same for now)
   selectedProblem: string;
   masteredProblems: string[];
   lastReviewDate: Record<string, string>;
   codeMap: Record<string, string>;
   userNotes: Record<string, string>;
   approachBoard: Record<string, string>;
-
-  // Editor state
   language: Language;
   editorFontSize: number;
   editorFontFamily: string;
@@ -27,21 +24,13 @@ interface ForgePageProps {
   isRunning: boolean;
   showNotes: boolean;
   showApproach: boolean;
-
-  // Chat state
   messages: Message[];
   input: string;
   isLoading: boolean;
-
-  // Settings state
   showSettings: boolean;
   selectedProvider: AIProvider;
   selectedModel: string;
-
-  // Orientation
   orientation: 'horizontal' | 'vertical';
-
-  // Handlers
   onSelectProblem: (p: string) => void;
   onGoHome: () => void;
   onCodeChange: (code: string) => void;
@@ -60,7 +49,7 @@ interface ForgePageProps {
   onEditorActivity: () => void;
   onInputChange: (v: string) => void;
   onSend: (override?: string) => void;
-  onMarkMastered: () => void;
+  onToggleMastered: (prob: string) => void;
   onClearChat: () => void;
   onProviderChange: (p: AIProvider) => void;
   onModelChange: (m: string) => void;
@@ -77,9 +66,12 @@ export default function ForgePage({
   onSelectProblem, onGoHome,
   onCodeChange, onSave, onRun, onGetIntel, onToggleNotes, onToggleApproach, onOpenSettings, onCloseSettings,
   onLanguageChange, onNoteChange, onApproachChange, onOutputClose, onOutputResize, onEditorActivity,
-  onInputChange, onSend, onMarkMastered, onClearChat,
+  onInputChange, onSend, onToggleMastered, onClearChat,
   onProviderChange, onModelChange, onFontSizeChange, onFontFamilyChange,
 }: ForgePageProps) {
+  const [showLeftPanel, setShowLeftPanel] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(true);
+
   const currentCode = codeMap[`${selectedProblem}-${language}`] ?? '';
   const currentNote = userNotes[selectedProblem] ?? '';
   const currentApproach = approachBoard[selectedProblem] ?? '';
@@ -89,23 +81,28 @@ export default function ForgePage({
       <PanelGroup orientation={orientation} className="h-full w-full">
 
         {/* ── LEFT SIDEBAR: Missions ──────────────────── */}
-        <Panel defaultSize={20} minSize={15} className="hidden md:flex">
-          <MissionsSidebar
-            selectedProblem={selectedProblem}
-            masteredProblems={masteredProblems}
-            lastReviewDate={lastReviewDate}
-            codeMap={codeMap}
-            onSelectProblem={onSelectProblem}
-            onGoHome={onGoHome}
-          />
-        </Panel>
-
-        <PanelResizeHandle className="forge-resize-handle w-2 border-x border-blue-500/10 cursor-col-resize">
-          <GripVertical size={12} className="text-[#334155]" />
-        </PanelResizeHandle>
+        {showLeftPanel && (
+          <>
+            <Panel defaultSize={25} minSize={20} className="flex">
+              <MissionsSidebar
+                selectedProblem={selectedProblem}
+                masteredProblems={masteredProblems}
+                lastReviewDate={lastReviewDate}
+                codeMap={codeMap}
+                onSelectProblem={onSelectProblem}
+                onGoHome={onGoHome}
+                onToggleMastered={onToggleMastered}
+                onClose={() => setShowLeftPanel(false)}
+              />
+            </Panel>
+            <PanelResizeHandle className="forge-resize-handle w-2 border-x border-blue-500/10 cursor-col-resize">
+              <GripVertical size={12} className="text-[#334155]" />
+            </PanelResizeHandle>
+          </>
+        )}
 
         {/* ── CENTER: Code Editor ─────────────────────── */}
-        <Panel defaultSize={50} minSize={30}>
+        <Panel defaultSize={showLeftPanel && showRightPanel ? 45 : showLeftPanel || showRightPanel ? 70 : 100} minSize={30}>
           <EditorPanel
             problem={selectedProblem}
             language={language}
@@ -117,6 +114,7 @@ export default function ForgePage({
             isAiLoading={isLoading}
             showNotes={showNotes}
             showApproach={showApproach}
+            isMastered={masteredProblems.includes(selectedProblem)}
             noteValue={currentNote}
             approachValue={currentApproach}
             editorFontSize={editorFontSize}
@@ -134,28 +132,37 @@ export default function ForgePage({
             onOutputClose={onOutputClose}
             onOutputResize={onOutputResize}
             onEditorActivity={onEditorActivity}
+            // Toggle controls for panels
+            showLeftPanel={showLeftPanel}
+            showRightPanel={showRightPanel}
+            onToggleLeftPanel={() => setShowLeftPanel(s => !s)}
+            onToggleRightPanel={() => setShowRightPanel(s => !s)}
           />
         </Panel>
-
-        <PanelResizeHandle className="forge-resize-handle w-2 border-x border-blue-500/10 cursor-col-resize">
-          <GripVertical size={12} className="text-[#334155]" />
-        </PanelResizeHandle>
 
         {/* ── RIGHT: Chat Panel ───────────────────────── */}
-        <Panel defaultSize={30} minSize={20}>
-          <ChatPanel
-            selectedProblem={selectedProblem}
-            messages={messages}
-            input={input}
-            isLoading={isLoading}
-            masteredProblems={masteredProblems}
-            onInputChange={onInputChange}
-            onSend={onSend}
-            onMarkMastered={onMarkMastered}
-            onClearChat={onClearChat}
-            onSelectProblem={onSelectProblem}
-          />
-        </Panel>
+        {showRightPanel && (
+          <>
+            <PanelResizeHandle className="forge-resize-handle w-2 border-x border-blue-500/10 cursor-col-resize">
+              <GripVertical size={12} className="text-[#334155]" />
+            </PanelResizeHandle>
+            <Panel defaultSize={30} minSize={20}>
+              <ChatPanel
+                selectedProblem={selectedProblem}
+                messages={messages}
+                input={input}
+                isLoading={isLoading}
+                masteredProblems={masteredProblems}
+                onInputChange={onInputChange}
+                onSend={onSend}
+                onToggleMastered={() => onToggleMastered(selectedProblem)}
+                onClearChat={onClearChat}
+                onSelectProblem={onSelectProblem}
+                onClose={() => setShowRightPanel(false)}
+              />
+            </Panel>
+          </>
+        )}
       </PanelGroup>
 
       {/* Settings Modal */}

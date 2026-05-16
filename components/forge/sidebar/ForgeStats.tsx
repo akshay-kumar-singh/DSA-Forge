@@ -5,10 +5,9 @@ import { Shield } from 'lucide-react';
 interface ForgeStatsProps {
   masteredCount: number;
   totalProblems: number;
-  attemptedCount: number;
 }
 
-export default function ForgeStats({ masteredCount, totalProblems, attemptedCount }: ForgeStatsProps) {
+export default function ForgeStats({ masteredCount, totalProblems }: ForgeStatsProps) {
   const pct = Math.min((masteredCount / totalProblems) * 100, 100);
 
   const rank =
@@ -44,10 +43,9 @@ export default function ForgeStats({ masteredCount, totalProblems, attemptedCoun
       </div>
 
       {/* Stat grid */}
-      <div className="grid grid-cols-3 gap-1 pt-1">
+      <div className="grid grid-cols-2 gap-1 pt-1">
         {[
           { label: 'Mastered', value: masteredCount, color: 'text-blue-400' },
-          { label: 'Attempted', value: attemptedCount, color: 'text-[#94a3b8]' },
           { label: 'Total', value: totalProblems, color: 'text-[#475569]' },
         ].map(({ label, value, color }) => (
           <div key={label} className="text-center">
