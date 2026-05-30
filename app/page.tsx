@@ -34,7 +34,7 @@ export default function DSAForge() {
   const [orientation, setOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
 
   // ── Problem State ───────────────────────────────────
-  const [selectedProblem, setSelectedProblem] = useState('Two Sum');
+  const [selectedProblem, setSelectedProblem] = useState("Training: Custom Sandbox");
   const [masteredProblems, setMasteredProblems] = useState<string[]>([]);
   const [lastReviewDate, setLastReviewDate] = useState<Record<string, string>>({});
 
