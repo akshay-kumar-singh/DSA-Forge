@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { toast } from 'sonner';
-import { createClient } from '@/utils/supabase/client';
 import { buildForgeSystemPrompt } from '@/lib/forge-ai';
 import { runCode as runCodeFn } from '@/lib/code-runner';
 import { getStarterCode, AI_PROVIDERS } from '@/lib/problems';
@@ -12,10 +11,19 @@ import ForgePage from '@/components/forge/ForgePage';
 import type { Message, Language, AIProvider, View } from '@/lib/types';
 import { DSA_PATTERNS } from '@/lib/problems';
 
-const supabase = createClient();
 const TOTAL_PROBLEMS = DSA_PATTERNS.reduce((acc, p) => acc + p.problems.length, 0);
 
+let _msgIdCounter = 0;
+function createMsgId(): string {
+  return `msg-${Date.now()}-${++_msgIdCounter}`;
+}
+
+function createMessage(role: 'user' | 'assistant', content: string): Message {
+  return { id: createMsgId(), role, content };
+}
+
 const INITIAL_MESSAGE: Message = {
+  id: 'initial-welcome',
   role: 'assistant',
   content: `**FORGE AI online.** 🛡️
 
@@ -28,8 +36,10 @@ Select a mission from the left panel and start coding. Ask me for hints, code re
 
 const USER_ID = '00000000-0000-0000-0000-000000000000';
 
+// Max messages to send to AI for context (keeps token usage reasonable)
+const MAX_AI_HISTORY = 20;
+
 export default function DSAForge() {
-  // ... (previous state declarations)
   const [view, setView] = useState<View>('home');
   const [orientation, setOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
 
@@ -40,9 +50,6 @@ export default function DSAForge() {
 
   // ── Editor State ────────────────────────────────────
   const [language, setLanguage] = useState<Language>('javascript');
-  const [codeMap, setCodeMap] = useState<Record<string, string>>({});
-  const [userNotes, setUserNotes] = useState<Record<string, string>>({});
-  const [approachBoard, setApproachBoard] = useState<Record<string, string>>({});
   const [output, setOutput] = useState<string | null>(null);
   const [outputHeight, setOutputHeight] = useState(250);
   const [isSaving, setIsSaving] = useState(false);
@@ -51,18 +58,31 @@ export default function DSAForge() {
   const [showApproach, setShowApproach] = useState(false);
   const [editorFontSize, setEditorFontSize] = useState(14);
   const [editorFontFamily, setEditorFontFamily] = useState('var(--font-mono)');
+  const [renderTick, setRenderTick] = useState(0); // Trigger re-renders when refs load data
 
-  // ── Chat State ──────────────────────────────────────
+  // ── Chat State (ephemeral — NOT saved to DB) ───────
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // ... (Settings State)
+  // ── Settings State ─────────────────────────────────
   const [showSettings, setShowSettings] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>(AI_PROVIDERS[0]);
   const [selectedModel, setSelectedModel] = useState(AI_PROVIDERS[0].models[0]);
 
+  // ── Refs for latest state (solves stale closure bugs & stops re-renders on typing) ──
+  const masteredRef = useRef(masteredProblems);
+  const codeMapRef = useRef<Record<string, string>>({});
+  const userNotesRef = useRef<Record<string, string>>({});
+  const approachBoardRef = useRef<Record<string, string>>({});
+  const lastReviewRef = useRef(lastReviewDate);
+  const messagesRef = useRef(messages);
   const lastEditorActivity = useRef<number>(Date.now());
+
+  // Keep state-backed refs in sync
+  useEffect(() => { masteredRef.current = masteredProblems; }, [masteredProblems]);
+  useEffect(() => { lastReviewRef.current = lastReviewDate; }, [lastReviewDate]);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   // Responsive orientation
   useEffect(() => {
@@ -72,24 +92,25 @@ export default function DSAForge() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  // ── Supabase: Load Progress ─────────────────────────
+  // ── Database: Load Progress (MongoDB) ──────
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from('progress')
-        .select('code_map, user_notes, mastered_problems, last_review_date, approach_board, chat_history')
-        .eq('user_id', USER_ID)
-        .single();
+      try {
+        const res = await fetch('/api/progress');
+        if (!res.ok) throw new Error('Failed to fetch progress');
+        
+        const { data } = await res.json();
 
-      if (data) {
-        if (data.code_map)         setCodeMap(data.code_map);
-        if (data.user_notes)       setUserNotes(data.user_notes);
-        if (data.mastered_problems) setMasteredProblems(data.mastered_problems);
-        if (data.last_review_date) setLastReviewDate(data.last_review_date);
-        if (data.approach_board)   setApproachBoard(data.approach_board);
-        if (data.chat_history && Array.isArray(data.chat_history) && data.chat_history.length > 0) {
-          setMessages(data.chat_history);
+        if (data) {
+          if (data.code_map)         codeMapRef.current = data.code_map;
+          if (data.user_notes)       userNotesRef.current = data.user_notes;
+          if (data.approach_board)   approachBoardRef.current = data.approach_board;
+          if (data.mastered_problems) setMasteredProblems(data.mastered_problems);
+          if (data.last_review_date) setLastReviewDate(data.last_review_date);
+          setRenderTick(t => t + 1); // trigger render for the loaded refs
         }
+      } catch (error) {
+        console.error('Error loading data from MongoDB:', error);
       }
     };
     load();
@@ -100,14 +121,12 @@ export default function DSAForge() {
   useEffect(() => {
     if (view === 'forge') {
       const key = `${selectedProblem}-${language}`;
-      if (!codeMap[key]) {
-        setCodeMap(prev => ({
-          ...prev,
-          [key]: getStarterCode(selectedProblem, language)
-        }));
+      if (!codeMapRef.current[key]) {
+        codeMapRef.current[key] = getStarterCode(selectedProblem, language);
+        setRenderTick(t => t + 1);
       }
     }
-  }, [selectedProblem, language, view, codeMap]);
+  }, [selectedProblem, language, view]);
 
   // ── Stuck Timer: 10 min idle → proactive nudge ──────
   useEffect(() => {
@@ -123,35 +142,36 @@ export default function DSAForge() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, isLoading]);
 
-  // ── Save ─────────────────────────────────────────────
+  // ── Save (uses refs for always-fresh state, saves to MongoDB) ─────────
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     const toastId = toast.loading('Syncing progress with S.H.I.E.L.D. servers...');
     
     try {
-      const { error } = await supabase.from('progress').upsert({
-        user_id: USER_ID,
-        code_map: codeMap,
-        user_notes: userNotes,
-        mastered_problems: masteredProblems,
-        last_review_date: lastReviewDate,
-        approach_board: approachBoard,
-        chat_history: messages,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
+      const res = await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code_map: codeMapRef.current,
+          user_notes: userNotesRef.current,
+          mastered_problems: masteredRef.current,
+          last_review_date: lastReviewRef.current,
+          approach_board: approachBoardRef.current,
+        }),
+      });
 
-      if (error) throw error;
+      if (!res.ok) throw new Error('Failed to save to MongoDB');
       toast.success('Mission progress secured in cloud database.', { id: toastId });
     } catch (error: any) {
-      console.error('Supabase save error:', error.message);
+      console.error('Save error:', error.message);
       toast.error('Server sync failed. Check database connection.', { id: toastId });
     } finally {
       setTimeout(() => setIsSaving(false), 500);
     }
-  }, [codeMap, userNotes, masteredProblems, lastReviewDate, approachBoard, messages]);
+  }, []); // ← No deps needed — reads from refs
 
 
-  // ── Problem Select ───────────────────────────────────
+  // ── Problem Select (resets chat for the new problem) ─
   const handleSelectProblem = useCallback((prob: string) => {
     setSelectedProblem(prob);
     setOutput(null);
@@ -159,12 +179,16 @@ export default function DSAForge() {
     setShowApproach(false);
 
     const isTraining = prob.startsWith('Training:');
-    setMessages(prev => [...prev, {
-      role: 'assistant',
-      content: isTraining
-        ? `**${prob}** — Training Module loaded. 📡\n\nI'm ready to teach this concept from the ground up. Tell me when you're ready to start, or ask me anything about this topic!`
-        : `**${prob}** — Mission loaded. 🎯\n\nEditor is ready. Write your approach on the Approach Board before coding if you'd like my input on your direction. Ask for a hint anytime.`,
-    }]);
+    
+    // Reset chat to fresh state for the new problem
+    setMessages([
+      INITIAL_MESSAGE,
+      createMessage('assistant',
+        isTraining
+          ? `**${prob}** — Training Module loaded. 📡\n\nI'm ready to teach this concept from the ground up. Tell me when you're ready to start, or ask me anything about this topic!`
+          : `**${prob}** — Mission loaded. 🎯\n\nEditor is ready. Write your approach on the Approach Board before coding if you'd like my input on your direction. Ask for a hint anytime.`
+      ),
+    ]);
 
     // Code population is handled by the useEffect above
   }, []);
@@ -172,7 +196,7 @@ export default function DSAForge() {
 
   // ── Run Code ─────────────────────────────────────────
   const handleRun = useCallback(async () => {
-    const currentCode = codeMap[`${selectedProblem}-${language}`] ?? getStarterCode(selectedProblem, language);
+    const currentCode = codeMapRef.current[`${selectedProblem}-${language}`] ?? getStarterCode(selectedProblem, language);
     setIsRunning(true);
     const toastId = toast.loading('Executing mission code...');
     try {
@@ -188,30 +212,34 @@ export default function DSAForge() {
     } finally {
       setIsRunning(false);
     }
-  }, [codeMap, selectedProblem, language]);
+  }, [selectedProblem, language]);
 
   // ── Toggle Mastered ─────────────────────────────────
   const handleToggleMastered = useCallback((prob: string) => {
-    const isMastered = masteredProblems.includes(prob);
-    let updated: string[];
+    setMasteredProblems(prev => {
+      const isMastered = prev.includes(prob);
+      let updated: string[];
+      
+      if (isMastered) {
+        updated = prev.filter(p => p !== prob);
+        toast.info(`Mission status updated: ${prob} is back on the active list.`);
+      } else {
+        updated = [...prev, prob];
+        toast.success('MISSION MASTERED! Status updated in S.H.I.E.L.D. database.', {
+          description: `You have conquered ${prob}.`,
+          duration: 5000,
+        });
+      }
+      
+      return updated;
+    });
     
-    if (isMastered) {
-      updated = masteredProblems.filter(p => p !== prob);
-      toast.info(`Mission status updated: ${prob} is back on the active list.`);
-    } else {
-      updated = [...masteredProblems, prob];
-      toast.success('MISSION MASTERED! Status updated in S.H.I.E.L.D. database.', {
-        description: `You have conquered ${prob}.`,
-        duration: 5000,
-      });
-    }
-    
-    setMasteredProblems(updated);
     setLastReviewDate(prev => ({ ...prev, [prob]: new Date().toISOString() }));
     
-    // Auto-save to ensure the status is persisted immediately
-    setTimeout(() => handleSave(), 100);
-  }, [masteredProblems, handleSave]);
+    // Auto-save — uses refs so it always has the latest state
+    // Small delay to let React batch the state updates first
+    setTimeout(() => handleSave(), 50);
+  }, [handleSave]);
 
   // ── Get Intel ────────────────────────────────────────
   const handleGetIntel = useCallback(() => {
@@ -225,13 +253,14 @@ export default function DSAForge() {
     const messageText = overrideInput || input;
     if (!messageText.trim() || isLoading) return;
 
-    const currentCode = codeMap[`${selectedProblem}-${language}`] ?? getStarterCode(selectedProblem, language);
-    const currentApproach = approachBoard[selectedProblem] ?? '';
+    // Always read latest code from ref for fresh context
+    const currentCode = codeMapRef.current[`${selectedProblem}-${language}`] ?? getStarterCode(selectedProblem, language);
+    const currentApproach = approachBoardRef.current[selectedProblem] ?? '';
 
     // Don't show stuck-timer internal messages to the user
     const isInternal = messageText.startsWith('[STUCK_TIMER]');
 
-    const userMsg: Message = { role: 'user', content: isInternal ? '' : messageText };
+    const userMsg = createMessage('user', isInternal ? '' : messageText);
     if (!isInternal) {
       setMessages(prev => [...prev, userMsg]);
     }
@@ -245,6 +274,10 @@ export default function DSAForge() {
       currentApproach,
     );
 
+    // Get current messages from ref (always fresh) and limit history
+    const currentMessages = messagesRef.current;
+    const recentMessages = currentMessages.slice(-MAX_AI_HISTORY);
+
     try {
       let content = '';
 
@@ -253,7 +286,7 @@ export default function DSAForge() {
         if (!apiKey) throw new Error('Gemini API key missing (NEXT_PUBLIC_GEMINI_API_KEY)');
 
         const ai = new GoogleGenerativeAI(apiKey);
-        const rawHistory = messages.map(m => ({
+        const rawHistory = recentMessages.map(m => ({
           role: m.role === 'user' ? 'user' : 'model',
           parts: [{ text: m.content }],
         }));
@@ -274,7 +307,8 @@ export default function DSAForge() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: [...messages, ...(isInternal ? [] : [userMsg])],
+            // Fix: Always send the user message to the API, even if it's internal
+            messages: [...recentMessages, { role: 'user', content: messageText }],
             provider: selectedProvider.id,
             model: selectedModel,
             systemInstruction: systemPrompt,
@@ -289,77 +323,97 @@ export default function DSAForge() {
         content = data.text;
       }
 
-      const assistantMsg: Message = {
-        role: 'assistant',
-        content: content || "I'm having trouble formulating a response. Try again?",
-      };
+      const assistantMsg = createMessage('assistant',
+        content || "I'm having trouble formulating a response. Try again?"
+      );
       setMessages(prev => [...prev, assistantMsg]);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       const isQuota = errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('quota');
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: isQuota
+      setMessages(prev => [...prev, createMessage('assistant',
+        isQuota
           ? "⚠️ **API quota exceeded.** Please check your API billing or try a different provider in Settings."
-          : `⚠️ **Connection error:**\n\`\`\`\n${errMsg}\n\`\`\`\nTry switching providers in Settings.`,
-      }]);
+          : `⚠️ **Connection error:**\n\`\`\`\n${errMsg}\n\`\`\`\nTry switching providers in Settings.`
+      )]);
     } finally {
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [input, isLoading, codeMap, selectedProblem, language, approachBoard, selectedProvider, selectedModel, messages]);
+  }, [input, isLoading, selectedProblem, language, selectedProvider, selectedModel]);
 
-  // ── Code change ──────────────────────────────────────
-  const handleCodeChange = (code: string) => {
-    setCodeMap(prev => ({ ...prev, [`${selectedProblem}-${language}`]: code }));
-  };
+  // ── Code change (memoized — fixes editor lag) ───────
+  const handleCodeChange = useCallback((code: string) => {
+    codeMapRef.current[`${selectedProblem}-${language}`] = code;
+    // NO setRenderTick here — typing doesn't trigger React renders!
+  }, [selectedProblem, language]);
 
   // ── Language change ──────────────────────────────────
-  const handleLanguageChange = (lang: Language) => {
+  const handleLanguageChange = useCallback((lang: Language) => {
     setLanguage(lang);
-    setCodeMap(prev => {
-      const key = `${selectedProblem}-${lang}`;
-      if (!prev[key]) return { ...prev, [key]: getStarterCode(selectedProblem, lang) };
-      return prev;
-    });
-  };
+    const key = `${selectedProblem}-${lang}`;
+    if (!codeMapRef.current[key]) {
+      codeMapRef.current[key] = getStarterCode(selectedProblem, lang);
+      setRenderTick(t => t + 1);
+    }
+  }, [selectedProblem]);
 
   // ── Agent Sync ──────────────────────────────────────
-  const handleResetForge = async () => {
+  const handleResetForge = useCallback(async () => {
     const confirmed = window.confirm("CAUTION: This will wipe ALL your cloud data for this mission. Proceed?");
     if (!confirmed) return;
 
-    const { error } = await supabase.from('progress').delete().eq('user_id', USER_ID);
-    if (error) {
-      toast.error('Failed to clear cloud data.');
-    } else {
+    try {
+      const res = await fetch('/api/progress', { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to clear data');
+
       localStorage.clear();
       toast.info('Neural link severed. Rebooting...');
       setTimeout(() => window.location.reload(), 1500);
-    }
-  };
-
-  // ── Clear Chat ──────────────────────────────────────
-  const handleClearChat = useCallback(async () => {
-    const confirmed = window.confirm("Reset conversation for all missions? This will clear AI memory in the cloud.");
-    if (!confirmed) return;
-
-    setMessages([INITIAL_MESSAGE]);
-    
-    const toastId = toast.loading('Clearing cloud neural records...');
-    try {
-      const { error } = await supabase.from('progress').upsert({
-        user_id: USER_ID,
-        chat_history: [INITIAL_MESSAGE],
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
-
-      if (error) throw error;
-      toast.success('AI memory wiped from S.H.I.E.L.D. servers.', { id: toastId });
-    } catch (err) {
-      toast.error('Local chat cleared, but server sync failed.', { id: toastId });
+    } catch (error) {
+      toast.error('Failed to clear cloud data.');
     }
   }, []);
+
+  // ── Clear Chat (local only — no DB sync needed) ─────
+  const handleClearChat = useCallback(() => {
+    setMessages([INITIAL_MESSAGE]);
+    toast.success('Chat cleared.');
+  }, []);
+
+  // ── Memoized callbacks for toggles ──────────────────
+  const handleToggleNotes = useCallback(() => {
+    setShowApproach(false);
+    setShowNotes(s => !s);
+  }, []);
+
+  const handleToggleApproach = useCallback(() => {
+    setShowNotes(false);
+    setShowApproach(s => !s);
+  }, []);
+
+  const handleEditorActivity = useCallback(() => {
+    lastEditorActivity.current = Date.now();
+  }, []);
+
+  const handleNoteChange = useCallback((val: string) => {
+    userNotesRef.current[selectedProblem] = val;
+    setRenderTick(t => t + 1);
+  }, [selectedProblem]);
+
+  const handleApproachChange = useCallback((val: string) => {
+    approachBoardRef.current[selectedProblem] = val;
+    setRenderTick(t => t + 1);
+  }, [selectedProblem]);
+
+  const handleProviderChange = useCallback((p: AIProvider) => {
+    setSelectedProvider(p);
+    setSelectedModel(p.models[0]);
+  }, []);
+
+  const handleGoHome = useCallback(() => setView('home'), []);
+  const handleOpenSettings = useCallback(() => setShowSettings(true), []);
+  const handleCloseSettings = useCallback(() => setShowSettings(false), []);
+  const handleOutputClose = useCallback(() => setOutput(null), []);
 
   // ── Render ───────────────────────────────────────────
   if (view === 'home') {
@@ -374,13 +428,12 @@ export default function DSAForge() {
 
   return (
     <ForgePage
-      // ... (rest of props)
       selectedProblem={selectedProblem}
       masteredProblems={masteredProblems}
       lastReviewDate={lastReviewDate}
-      codeMap={codeMap}
-      userNotes={userNotes}
-      approachBoard={approachBoard}
+      codeMap={codeMapRef.current}
+      userNotes={userNotesRef.current}
+      approachBoard={approachBoardRef.current}
       language={language}
       editorFontSize={editorFontSize}
       editorFontFamily={editorFontFamily}
@@ -398,32 +451,26 @@ export default function DSAForge() {
       selectedModel={selectedModel}
       orientation={orientation}
       onSelectProblem={handleSelectProblem}
-      onGoHome={() => setView('home')}
+      onGoHome={handleGoHome}
       onCodeChange={handleCodeChange}
       onSave={handleSave}
       onRun={handleRun}
       onGetIntel={handleGetIntel}
-      onToggleNotes={() => {
-        if (!showNotes) setShowApproach(false);
-        setShowNotes(s => !s);
-      }}
-      onToggleApproach={() => {
-        if (!showApproach) setShowNotes(false);
-        setShowApproach(s => !s);
-      }}
-      onOpenSettings={() => setShowSettings(true)}
-      onCloseSettings={() => setShowSettings(false)}
+      onToggleNotes={handleToggleNotes}
+      onToggleApproach={handleToggleApproach}
+      onOpenSettings={handleOpenSettings}
+      onCloseSettings={handleCloseSettings}
       onLanguageChange={handleLanguageChange}
-      onNoteChange={(val) => setUserNotes(prev => ({ ...prev, [selectedProblem]: val }))}
-      onApproachChange={(val) => setApproachBoard(prev => ({ ...prev, [selectedProblem]: val }))}
-      onOutputClose={() => setOutput(null)}
+      onNoteChange={handleNoteChange}
+      onApproachChange={handleApproachChange}
+      onOutputClose={handleOutputClose}
       onOutputResize={setOutputHeight}
-      onEditorActivity={() => { lastEditorActivity.current = Date.now(); }}
+      onEditorActivity={handleEditorActivity}
       onInputChange={setInput}
       onSend={handleSend}
       onToggleMastered={handleToggleMastered}
       onClearChat={handleClearChat}
-      onProviderChange={(p) => { setSelectedProvider(p); setSelectedModel(p.models[0]); }}
+      onProviderChange={handleProviderChange}
       onModelChange={setSelectedModel}
       onFontSizeChange={setEditorFontSize}
       onFontFamilyChange={setEditorFontFamily}

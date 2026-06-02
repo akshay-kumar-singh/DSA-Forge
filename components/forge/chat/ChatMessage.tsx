@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Bot, User } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -33,9 +34,11 @@ interface ChatMessageProps {
   isLatest: boolean;
 }
 
-export default function ChatMessage({ message, isLatest }: ChatMessageProps) {
+const ChatMessage = React.memo(function ChatMessage({ message, isLatest }: ChatMessageProps) {
   const isUser = message.role === 'user';
-  const parts = parseMermaid(message.content);
+  
+  // Memoize expensive mermaid parsing + markdown rendering
+  const parts = useMemo(() => parseMermaid(message.content), [message.content]);
 
   return (
     <div className={clsx('flex gap-3 forge-in', isUser ? 'flex-row-reverse' : 'flex-row')}>
@@ -72,4 +75,6 @@ export default function ChatMessage({ message, isLatest }: ChatMessageProps) {
       </div>
     </div>
   );
-}
+});
+
+export default ChatMessage;

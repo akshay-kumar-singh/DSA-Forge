@@ -1,3 +1,4 @@
+import React from 'react';
 import { Target, X } from 'lucide-react';
 import ForgeStats from './ForgeStats';
 import ProblemList from './ProblemList';
@@ -16,7 +17,7 @@ interface MissionsSidebarProps {
 
 const TOTAL_PROBLEMS = DSA_PATTERNS.reduce((acc, p) => acc + p.problems.length, 0);
 
-export default function MissionsSidebar({
+const MissionsSidebar = React.memo(function MissionsSidebar({
   selectedProblem,
   masteredProblems,
   lastReviewDate,
@@ -58,4 +59,6 @@ export default function MissionsSidebar({
       />
     </div>
   );
-}
+});
+
+export default MissionsSidebar;

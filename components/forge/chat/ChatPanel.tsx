@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Shield, ChevronRight, Loader2, X } from 'lucide-react';
 import ChatMessage from './ChatMessage';
@@ -22,7 +22,7 @@ interface ChatPanelProps {
   onClose: () => void;
 }
 
-export default function ChatPanel({
+const ChatPanel = React.memo(function ChatPanel({
   selectedProblem,
   messages,
   input,
@@ -98,19 +98,19 @@ export default function ChatPanel({
         )}
       </div>
 
-      {/* Messages */}
+      {/* Messages — uses message.id for stable keys */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         <AnimatePresence initial={false}>
-          {messages.map((msg, idx) => (
+          {messages.map((msg) => (
             <motion.div
-              key={idx}
+              key={msg.id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
             >
               <ChatMessage
                 message={msg}
-                isLatest={idx === messages.length - 1}
+                isLatest={msg.id === messages[messages.length - 1]?.id}
               />
             </motion.div>
           ))}
@@ -153,4 +153,6 @@ export default function ChatPanel({
       />
     </div>
   );
-}
+});
+
+export default ChatPanel;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import Editor from '@monaco-editor/react';
 import EditorToolbar from './EditorToolbar';
 import ForgeOutput from './ForgeOutput';
@@ -43,7 +43,7 @@ interface EditorPanelProps {
   onToggleRightPanel: () => void;
 }
 
-export default function EditorPanel({
+const EditorPanel = React.memo(function EditorPanel({
   problem,
   language,
   code,
@@ -52,9 +52,9 @@ export default function EditorPanel({
   isSaving,
   isRunning,
   isAiLoading,
+  isMastered,
   showNotes,
   showApproach,
-  isMastered,
   noteValue,
   approachValue,
   editorFontSize,
@@ -78,6 +78,18 @@ export default function EditorPanel({
   onToggleRightPanel,
 }: EditorPanelProps) {
   const editorRef = useRef<unknown>(null);
+  const onCodeChangeRef = useRef(onCodeChange);
+  const onEditorActivityRef = useRef(onEditorActivity);
+
+  // Keep callback refs fresh without causing Monaco to re-render
+  useEffect(() => { onCodeChangeRef.current = onCodeChange; }, [onCodeChange]);
+  useEffect(() => { onEditorActivityRef.current = onEditorActivity; }, [onEditorActivity]);
+
+  // Stable onChange handler that reads from refs — never changes identity
+  const stableOnChange = useCallback((v: string | undefined) => {
+    onCodeChangeRef.current(v || '');
+    onEditorActivityRef.current();
+  }, []);
 
   // Ctrl+S save shortcut
   useEffect(() => {
@@ -90,6 +102,51 @@ export default function EditorPanel({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onSave]);
+
+  // Stable onMount handler — never changes identity
+  const handleEditorMount = useCallback((editor: any, monaco: any) => {
+    editorRef.current = editor;
+    // Ctrl+Enter → Run
+    editor.addCommand(
+      monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+      () => onRun()
+    );
+  }, [onRun]);
+
+  // Memoize editor options to prevent unnecessary Monaco re-renders
+  const editorOptions = React.useMemo(() => ({
+    minimap: { enabled: false },
+    fontSize: editorFontSize,
+    fontFamily: editorFontFamily,
+    lineHeight: editorFontSize * 1.6,
+    padding: { top: 16, bottom: 16 },
+    scrollBeyondLastLine: false,
+    smoothScrolling: true,
+    cursorBlinking: 'smooth' as const,
+    cursorStyle: 'line' as const,
+    cursorSmoothCaretAnimation: 'on' as const,
+    formatOnPaste: true,
+    overviewRulerLanes: 0,
+    hideCursorInOverviewRuler: true,
+    fastScrollSensitivity: 5,
+    mouseWheelZoom: true,
+    wordWrap: 'off' as const,
+    scrollbar: { vertical: 'visible' as const, horizontal: 'visible' as const },
+    quickSuggestions: { other: true, comments: true, strings: true },
+    suggestOnTriggerCharacters: true,
+    acceptSuggestionOnEnter: 'on' as const,
+    tabCompletion: 'on' as const,
+    parameterHints: { enabled: true },
+    wordBasedSuggestions: 'allDocuments' as const,
+    snippetSuggestions: 'top' as const,
+    autoClosingBrackets: 'always' as const,
+    autoClosingQuotes: 'always' as const,
+    folding: true,
+    glyphMargin: false,
+    lineNumbers: 'on' as const,
+    renderLineHighlight: 'line' as const,
+    selectionHighlight: true,
+  }), [editorFontSize, editorFontFamily]);
 
   return (
     <div className="flex flex-col h-full min-w-0 bg-[#0a0a0f]">
@@ -121,51 +178,9 @@ export default function EditorPanel({
           language={language}
           value={code}
           theme="vs-dark"
-          onChange={(v) => {
-            onCodeChange(v || '');
-            onEditorActivity();
-          }}
-          onMount={(editor, monaco) => {
-            editorRef.current = editor;
-            // Ctrl+Enter → Run
-            editor.addCommand(
-              monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
-              () => onRun()
-            );
-          }}
-          options={{
-            minimap: { enabled: false },
-            fontSize: editorFontSize,
-            fontFamily: editorFontFamily,
-            lineHeight: editorFontSize * 1.6,
-            padding: { top: 16, bottom: 16 },
-            scrollBeyondLastLine: false,
-            smoothScrolling: true,
-            cursorBlinking: 'smooth',
-            cursorStyle: 'line',
-            cursorSmoothCaretAnimation: 'on',
-            formatOnPaste: true,
-            overviewRulerLanes: 0,
-            hideCursorInOverviewRuler: true,
-            fastScrollSensitivity: 5,
-            mouseWheelZoom: true,
-            wordWrap: 'off',
-            scrollbar: { vertical: 'visible', horizontal: 'visible' },
-            quickSuggestions: { other: true, comments: true, strings: true },
-            suggestOnTriggerCharacters: true,
-            acceptSuggestionOnEnter: 'on',
-            tabCompletion: 'on',
-            parameterHints: { enabled: true },
-            wordBasedSuggestions: 'allDocuments',
-            snippetSuggestions: 'top',
-            autoClosingBrackets: 'always',
-            autoClosingQuotes: 'always',
-            folding: true,
-            glyphMargin: false,
-            lineNumbers: 'on',
-            renderLineHighlight: 'line',
-            selectionHighlight: true,
-          }}
+          onChange={stableOnChange}
+          onMount={handleEditorMount}
+          options={editorOptions}
         />
 
         {/* Output terminal */}
@@ -198,4 +213,6 @@ export default function EditorPanel({
       </div>
     </div>
   );
-}
+});
+
+export default EditorPanel;

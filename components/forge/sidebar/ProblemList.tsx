@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Zap, BookOpen, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
 import { DSA_PATTERNS, PROBLEM_INFO } from '@/lib/problems';
@@ -17,7 +18,7 @@ const DIFF_CONFIG = {
   hard:   { label: 'H', color: 'text-red-400',    bg: 'bg-red-400/10' },
 };
 
-export default function ProblemList({ 
+const ProblemList = React.memo(function ProblemList({ 
   selectedProblem, 
   masteredProblems, 
   onSelectProblem,
@@ -117,4 +118,6 @@ export default function ProblemList({
       ))}
     </div>
   );
-}
+});
+
+export default ProblemList;

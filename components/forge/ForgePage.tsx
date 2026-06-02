@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { GripVertical, Menu, X, Layout, MessageSquare } from 'lucide-react';
 import MissionsSidebar from './sidebar/MissionsSidebar';
@@ -73,9 +73,21 @@ export default function ForgePage({
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
 
+  // Compute derived values directly without useMemo since codeMap is a mutated ref object
   const currentCode = codeMap[`${selectedProblem}-${language}`] ?? '';
   const currentNote = userNotes[selectedProblem] ?? '';
   const currentApproach = approachBoard[selectedProblem] ?? '';
+  const isMastered = masteredProblems.includes(selectedProblem);
+
+  // Stable toggle callbacks
+  const handleToggleLeftPanel = React.useCallback(() => setShowLeftPanel(s => !s), []);
+  const handleToggleRightPanel = React.useCallback(() => setShowRightPanel(s => !s), []);
+  const handleCloseLeft = React.useCallback(() => setShowLeftPanel(false), []);
+  const handleCloseRight = React.useCallback(() => setShowRightPanel(false), []);
+  const handleToggleMasteredCurrent = React.useCallback(
+    () => onToggleMastered(selectedProblem),
+    [onToggleMastered, selectedProblem]
+  );
 
   return (
     <div className="h-screen w-full overflow-hidden bg-[#0a0a0f]">
@@ -93,7 +105,7 @@ export default function ForgePage({
                 onSelectProblem={onSelectProblem}
                 onGoHome={onGoHome}
                 onToggleMastered={onToggleMastered}
-                onClose={() => setShowLeftPanel(false)}
+                onClose={handleCloseLeft}
               />
             </Panel>
             <PanelResizeHandle className="forge-resize-handle w-2 border-x border-blue-500/10 cursor-col-resize">
@@ -115,7 +127,7 @@ export default function ForgePage({
             isAiLoading={isLoading}
             showNotes={showNotes}
             showApproach={showApproach}
-            isMastered={masteredProblems.includes(selectedProblem)}
+            isMastered={isMastered}
             noteValue={currentNote}
             approachValue={currentApproach}
             editorFontSize={editorFontSize}
@@ -136,8 +148,8 @@ export default function ForgePage({
             // Toggle controls for panels
             showLeftPanel={showLeftPanel}
             showRightPanel={showRightPanel}
-            onToggleLeftPanel={() => setShowLeftPanel(s => !s)}
-            onToggleRightPanel={() => setShowRightPanel(s => !s)}
+            onToggleLeftPanel={handleToggleLeftPanel}
+            onToggleRightPanel={handleToggleRightPanel}
           />
         </Panel>
 
@@ -156,10 +168,10 @@ export default function ForgePage({
                 masteredProblems={masteredProblems}
                 onInputChange={onInputChange}
                 onSend={onSend}
-                onToggleMastered={() => onToggleMastered(selectedProblem)}
+                onToggleMastered={handleToggleMasteredCurrent}
                 onClearChat={onClearChat}
                 onSelectProblem={onSelectProblem}
-                onClose={() => setShowRightPanel(false)}
+                onClose={handleCloseRight}
               />
             </Panel>
           </>
