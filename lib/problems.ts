@@ -1262,30 +1262,9 @@ export const AI_PROVIDERS = [
     id: 'gemini',
     name: 'Gemini',
     models: [
-      'gemini-3.1-pro-preview',
       'gemini-3-flash-preview'
     ]
   },
-
-  {
-    id: 'groq',
-    name: 'Groq',
-    models: [
-      'llama-3.3-70b-versatile',
-      'mixtral-8x7b-32768'
-    ]
-  },
-
-  {
-    id: 'openrouter',
-    name: 'OpenRouter',
-    models: [
-      'mistralai/mistral-7b-instruct:free',
-      'google/gemma-7b:free',
-      'meta-llama/llama-3.1-8b-instruct:free',
-      'meta-llama/llama-3.2-3b-instruct:free'
-    ]
-  }
 ];
 
 // ======================================================
