@@ -53,7 +53,7 @@ const ProblemList = React.memo(function ProblemList({
                     type="checkbox"
                     checked={isMastered}
                     onChange={() => onToggleMastered(prob)}
-                    className="w-3.5 h-3.5 rounded bg-[#0a0a0f] border-blue-500/30 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer transition-all hover:border-blue-500/60 ml-1.5"
+                    className="w-3.5 h-3.5 rounded bg-bg-base border-border-default text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer transition-all hover:border-blue-500/60 ml-1.5"
                     title={isMastered ? "Mark as Incomplete" : "Mark as Completed"}
                   />
                 )}
@@ -78,7 +78,7 @@ const ProblemList = React.memo(function ProblemList({
                   {/* Label */}
                   <span className={clsx(
                     'flex-1 text-xs font-bold truncate tracking-wide',
-                    isSelected ? 'text-blue-300' : 'text-[#94a3b8] group-hover:text-[#cbd5e1]'
+                    isSelected ? 'text-blue-300' : 'text-text-secondary group-hover:text-text-primary'
                   )}>
                     {isTraining ? prob.replace('Training: ', '') : prob}
                   </span>
@@ -97,8 +97,8 @@ const ProblemList = React.memo(function ProblemList({
                 {isSelected && prereqs && prereqs.length > 0 && (
                   <div className="ml-4 mt-0.5 space-y-0.5">
                     <div className="flex items-center gap-1 px-2 py-0.5">
-                      <ChevronRight size={9} className="text-[#475569]" />
-                      <span className="text-[8px] font-bold uppercase text-[#475569]">Prerequisites</span>
+                      <ChevronRight size={9} className="text-text-muted" />
+                      <span className="text-[8px] font-bold uppercase text-text-muted">Prerequisites</span>
                     </div>
                     {prereqs.map((pre, k) => (
                       <button

@@ -30,11 +30,12 @@ function parseMermaid(content: string): Array<{ type: 'text' | 'mermaid'; value:
 }
 
 interface ChatMessageProps {
+  theme: 'dark' | 'light';
   message: Message;
   isLatest: boolean;
 }
 
-const ChatMessage = React.memo(function ChatMessage({ message, isLatest }: ChatMessageProps) {
+const ChatMessage = React.memo(function ChatMessage({ theme, message, isLatest }: ChatMessageProps) {
   const isUser = message.role === 'user';
   
   // Memoize expensive mermaid parsing + markdown rendering
@@ -47,7 +48,7 @@ const ChatMessage = React.memo(function ChatMessage({ message, isLatest }: ChatM
         'w-8 h-8 rounded-full flex items-center justify-center shrink-0 border',
         isUser
           ? 'bg-blue-500/20 border-blue-500/40'
-          : 'bg-[#141428] border-blue-500/30',
+          : 'bg-bg-elevated border-border-default',
         isLatest && !isUser && 'pulse-glow'
       )}>
         {isUser
@@ -60,12 +61,12 @@ const ChatMessage = React.memo(function ChatMessage({ message, isLatest }: ChatM
       <div className={clsx(
         'flex-1 min-w-0 rounded-lg px-4 py-3 text-sm border',
         isUser
-          ? 'bg-blue-500/10 border-blue-500/25 text-[#e2e8f0]'
-          : 'bg-[#0f0f1a] border-blue-500/15 text-[#e2e8f0]'
+          ? 'bg-blue-500/10 border-blue-500/25 text-text-primary'
+          : 'bg-bg-surface border-border-subtle text-text-primary'
       )}>
         {parts.map((part, i) =>
           part.type === 'mermaid' ? (
-            <MermaidDiagram key={i} chart={part.value} />
+            <MermaidDiagram key={i} theme={theme} chart={part.value} />
           ) : (
             <div key={i} className="forge-prose">
               <ReactMarkdown>{part.value}</ReactMarkdown>

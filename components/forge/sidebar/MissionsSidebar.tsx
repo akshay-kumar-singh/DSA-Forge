@@ -28,16 +28,16 @@ const MissionsSidebar = React.memo(function MissionsSidebar({
   onClose,
 }: MissionsSidebarProps) {
   return (
-    <div className="h-full flex flex-col forge-panel border-r border-blue-500/10">
+    <div className="h-full flex flex-col forge-panel border-r border-border-subtle bg-bg-surface">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-3 border-b border-blue-500/10 shrink-0">
+      <div className="flex items-center justify-between px-3 py-3 border-b border-border-subtle shrink-0">
         <div className="flex items-center gap-2">
           <Target size={16} className="text-blue-400" />
-          <span className="text-sm font-black uppercase tracking-widest text-[#e2e8f0]">Missions</span>
+          <span className="text-sm font-black uppercase tracking-widest text-text-primary">Missions</span>
         </div>
         <button
           onClick={onClose}
-          className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/5 text-[#475569] hover:text-[#94a3b8] transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded hover:bg-bg-card text-text-muted hover:text-text-secondary transition-colors"
           title="Close Sidebar"
         >
           <X size={14} />

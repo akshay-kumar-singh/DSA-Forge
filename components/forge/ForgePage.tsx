@@ -7,7 +7,10 @@ import ChatPanel from './chat/ChatPanel';
 import ForgeSettings from './settings/ForgeSettings';
 import type { Message, Language, AIProvider } from '@/lib/types';
 
+
 interface ForgePageProps {
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
   selectedProblem: string;
   masteredProblems: string[];
   lastReviewDate: Record<string, string>;
@@ -35,7 +38,7 @@ interface ForgePageProps {
   onCodeChange: (code: string) => void;
   onSave: () => void;
   onRun: () => void;
-  onGetIntel: () => void;
+  onReviewCode: () => void;
   onToggleNotes: () => void;
   onToggleApproach: () => void;
   onOpenSettings: () => void;
@@ -48,6 +51,7 @@ interface ForgePageProps {
   onEditorActivity: () => void;
   onInputChange: (v: string) => void;
   onSend: (override?: string) => void;
+  onStop: () => void;
   onToggleMastered: (prob: string) => void;
   onClearChat: () => void;
   onProviderChange: (p: AIProvider) => void;
@@ -58,15 +62,16 @@ interface ForgePageProps {
 }
 
 export default function ForgePage({
+  theme, onToggleTheme,
   selectedProblem, masteredProblems, lastReviewDate, codeMap, userNotes, approachBoard,
   language, editorFontSize, editorFontFamily, output, outputHeight, isSaving, isRunning, showNotes, showApproach,
   messages, input, isLoading,
   showSettings, selectedProvider, selectedModel,
   orientation,
   onSelectProblem, onGoHome,
-  onCodeChange, onSave, onRun, onGetIntel, onToggleNotes, onToggleApproach, onOpenSettings, onCloseSettings,
+  onCodeChange, onSave, onRun, onReviewCode, onToggleNotes, onToggleApproach, onOpenSettings, onCloseSettings,
   onLanguageChange, onNoteChange, onApproachChange, onOutputClose, onOutputResize, onEditorActivity,
-  onInputChange, onSend, onToggleMastered, onClearChat,
+  onInputChange, onSend, onStop, onToggleMastered, onClearChat,
   onProviderChange, onModelChange, onFontSizeChange, onFontFamilyChange,
   onResetForge,
 }: ForgePageProps) {
@@ -90,7 +95,7 @@ export default function ForgePage({
   );
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-[#0a0a0f]">
+    <div className="h-screen w-full overflow-hidden bg-bg-base">
       <PanelGroup orientation={orientation} className="h-full w-full">
 
         {/* ── LEFT SIDEBAR: Missions ──────────────────── */}
@@ -108,8 +113,8 @@ export default function ForgePage({
                 onClose={handleCloseLeft}
               />
             </Panel>
-            <PanelResizeHandle className="forge-resize-handle w-2 border-x border-blue-500/10 cursor-col-resize">
-              <GripVertical size={12} className="text-[#334155]" />
+            <PanelResizeHandle className="forge-resize-handle w-2 border-x border-border-subtle cursor-col-resize">
+              <GripVertical size={12} className="text-text-muted" />
             </PanelResizeHandle>
           </>
         )}
@@ -117,6 +122,8 @@ export default function ForgePage({
         {/* ── CENTER: Code Editor ─────────────────────── */}
         <Panel defaultSize={showLeftPanel && showRightPanel ? 45 : showLeftPanel || showRightPanel ? 70 : 100} minSize={30}>
           <EditorPanel
+            theme={theme}
+            onToggleTheme={onToggleTheme}
             problem={selectedProblem}
             language={language}
             code={currentCode}
@@ -135,7 +142,7 @@ export default function ForgePage({
             onCodeChange={onCodeChange}
             onSave={onSave}
             onRun={onRun}
-            onGetIntel={onGetIntel}
+            onReviewCode={onReviewCode}
             onToggleNotes={onToggleNotes}
             onToggleApproach={onToggleApproach}
             onOpenSettings={onOpenSettings}
@@ -156,11 +163,12 @@ export default function ForgePage({
         {/* ── RIGHT: Chat Panel ───────────────────────── */}
         {showRightPanel && (
           <>
-            <PanelResizeHandle className="forge-resize-handle w-2 border-x border-blue-500/10 cursor-col-resize">
-              <GripVertical size={12} className="text-[#334155]" />
+            <PanelResizeHandle className="forge-resize-handle w-2 border-x border-border-subtle cursor-col-resize">
+              <GripVertical size={12} className="text-text-muted" />
             </PanelResizeHandle>
             <Panel defaultSize={30} minSize={20}>
               <ChatPanel
+                theme={theme}
                 selectedProblem={selectedProblem}
                 messages={messages}
                 input={input}
@@ -168,6 +176,7 @@ export default function ForgePage({
                 masteredProblems={masteredProblems}
                 onInputChange={onInputChange}
                 onSend={onSend}
+                onStop={onStop}
                 onToggleMastered={handleToggleMasteredCurrent}
                 onClearChat={onClearChat}
                 onSelectProblem={onSelectProblem}

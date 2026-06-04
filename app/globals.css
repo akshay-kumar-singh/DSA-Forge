@@ -4,24 +4,76 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-card: var(--bg-card);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-bright: var(--border-bright);
 }
 
+/* ── Dark Theme (Rich Slate — Notion/Arc inspired) ── */
 :root {
-  --bg-base: #0a0a0f;
-  --bg-surface: #0f0f1a;
-  --bg-elevated: #141428;
-  --bg-card: #1a1a2e;
-  --accent-blue: #3b82f6;
-  --accent-blue-dim: #1d4ed8;
-  --accent-blue-glow: rgba(59, 130, 246, 0.25);
-  --accent-red: #ef4444;
-  --accent-red-glow: rgba(239, 68, 68, 0.25);
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
-  --border-subtle: rgba(59, 130, 246, 0.12);
-  --border-default: rgba(59, 130, 246, 0.25);
-  --border-bright: rgba(59, 130, 246, 0.6);
+  --bg-base: #0c0d10;
+  --bg-surface: #141519;
+  --bg-elevated: #1c1d24;
+  --bg-card: #25262e;
+  --accent: #6366f1;
+  --accent-dim: #4338ca;
+  --accent-glow: rgba(99, 102, 241, 0.18);
+  --accent-soft: rgba(99, 102, 241, 0.08);
+  --accent-red: #f43f5e;
+  --accent-red-glow: rgba(244, 63, 94, 0.18);
+  --accent-green: #34d399;
+  --accent-yellow: #fbbf24;
+  --text-primary: #e8e9ed;
+  --text-secondary: #9194a1;
+  --text-muted: #51535e;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-bright: rgba(99, 102, 241, 0.45);
+  --text-bright: #f4f4f6;
+  --code-text: #a5b4fc;
+  --bg-pre: #0e0f12;
+  --text-pre: #d1d5e0;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.55);
+  --btn-hover-color: #f4f4f6;
+}
+
+/* ── Light Theme (Warm Ivory — Linear/Raycast inspired) ── */
+:root[data-theme='light'] {
+  --bg-base: #fafaf9;
+  --bg-surface: #f4f4f2;
+  --bg-elevated: #ebeae8;
+  --bg-card: #dfdedd;
+  --accent: #4f46e5;
+  --accent-dim: #4338ca;
+  --accent-glow: rgba(79, 70, 229, 0.10);
+  --accent-soft: rgba(79, 70, 229, 0.05);
+  --accent-red: #e11d48;
+  --accent-red-glow: rgba(225, 29, 72, 0.10);
+  --accent-green: #059669;
+  --accent-yellow: #d97706;
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --text-muted: #a8a29e;
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-bright: rgba(79, 70, 229, 0.35);
+  --text-bright: #0c0a09;
+  --code-text: #4338ca;
+  --bg-pre: #f0efed;
+  --text-pre: #292524;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --btn-hover-color: #1c1917;
 }
 
 * { box-sizing: border-box; }
@@ -36,8 +88,8 @@ body {
 /* ── Tech Grid Background ─────────────────────────── */
 .tech-grid {
   background-image:
-    linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+    linear-gradient(var(--accent-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--accent-soft) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -65,8 +117,8 @@ body {
 
 /* ── Glow Effects ─────────────────────────────────── */
 .glow-blue {
-  box-shadow: 0 0 12px var(--accent-blue-glow), 0 0 24px rgba(59, 130, 246, 0.1);
-  border-color: var(--accent-blue) !important;
+  box-shadow: 0 0 12px var(--accent-glow), 0 0 24px rgba(99, 102, 241, 0.08);
+  border-color: var(--accent) !important;
 }
 
 .glow-red {
@@ -81,23 +133,23 @@ body {
   gap: 6px;
   padding: 0 14px;
   height: 36px;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   border: 1px solid var(--border-default);
   background: var(--bg-elevated);
-  color: var(--text-primary);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .forge-btn:hover:not(:disabled) {
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 8px var(--accent-blue-glow);
-  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+  color: var(--btn-hover-color);
 }
 
 .forge-btn:disabled {
@@ -106,14 +158,14 @@ body {
 }
 
 .forge-btn-primary {
-  background: var(--accent-blue);
-  border-color: var(--accent-blue);
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 
 .forge-btn-primary:hover:not(:disabled) {
-  background: #2563eb;
-  box-shadow: 0 0 16px var(--accent-blue-glow);
+  background: var(--accent-dim);
+  box-shadow: 0 0 16px var(--accent-glow);
 }
 
 .forge-btn-danger {
@@ -122,14 +174,14 @@ body {
 }
 
 .forge-btn-danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(244, 63, 94, 0.1);
   box-shadow: 0 0 8px var(--accent-red-glow);
 }
 
 /* ── Animations ───────────────────────────────────── */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 4px var(--accent-blue-glow); opacity: 1; }
-  50%       { box-shadow: 0 0 14px var(--accent-blue-glow), 0 0 28px rgba(59,130,246,0.15); opacity: 0.8; }
+  0%, 100% { box-shadow: 0 0 4px var(--accent-glow); opacity: 1; }
+  50%       { box-shadow: 0 0 14px var(--accent-glow), 0 0 28px rgba(99,102,241,0.12); opacity: 0.8; }
 }
 
 @keyframes forge-in {
@@ -152,10 +204,10 @@ body {
 .dot-blink { animation: dot-blink 1.4s ease-in-out infinite; }
 
 /* ── Scrollbar ────────────────────────────────────── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--bg-base); }
-::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.35); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* ── Mermaid Diagram Dark Overrides ──────────────── */
 .mermaid-wrap { background: transparent; }
@@ -164,21 +216,21 @@ body {
 /* ── Prose / Markdown in Chat ────────────────────── */
 .forge-prose { color: var(--text-primary); font-size: 0.875rem; line-height: 1.7; }
 .forge-prose h1, .forge-prose h2, .forge-prose h3 {
-  color: #fff;
+  color: var(--text-bright);
   font-weight: 700;
   letter-spacing: 0.02em;
   margin: 0.75em 0 0.4em;
 }
 .forge-prose code {
-  background: rgba(59, 130, 246, 0.12);
-  color: #93c5fd;
+  background: var(--accent-soft);
+  color: var(--code-text);
   padding: 2px 6px;
   border-radius: 3px;
   font-size: 0.82em;
   font-family: var(--font-mono);
 }
 .forge-prose pre {
-  background: #0d1117;
+  background: var(--bg-pre);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 14px 16px;
@@ -188,13 +240,13 @@ body {
   line-height: 1.6;
   margin: 0.75em 0;
 }
-.forge-prose pre code { background: transparent; padding: 0; color: #e2e8f0; }
+.forge-prose pre code { background: transparent; padding: 0; color: var(--text-pre); }
 .forge-prose ul, .forge-prose ol { padding-left: 1.4em; margin: 0.5em 0; }
 .forge-prose li { margin: 0.25em 0; }
-.forge-prose strong { color: #fff; font-weight: 700; }
-.forge-prose a { color: var(--accent-blue); text-decoration: underline; }
+.forge-prose strong { color: var(--text-bright); font-weight: 700; }
+.forge-prose a { color: var(--accent); text-decoration: underline; }
 .forge-prose blockquote {
-  border-left: 3px solid var(--accent-blue);
+  border-left: 3px solid var(--accent);
   padding-left: 12px;
   color: var(--text-secondary);
   margin: 0.5em 0;
@@ -210,4 +262,4 @@ body {
   align-items: center;
   justify-content: center;
 }
-.forge-resize-handle:hover { background: rgba(59, 130, 246, 0.08); }
+.forge-resize-handle:hover { background: var(--accent-soft); }

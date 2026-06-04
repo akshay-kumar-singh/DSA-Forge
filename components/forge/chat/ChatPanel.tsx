@@ -9,6 +9,7 @@ import type { Message } from '@/lib/types';
 import { PROBLEM_INFO } from '@/lib/problems';
 
 interface ChatPanelProps {
+  theme: 'dark' | 'light';
   selectedProblem: string;
   messages: Message[];
   input: string;
@@ -16,6 +17,7 @@ interface ChatPanelProps {
   masteredProblems: string[];
   onInputChange: (v: string) => void;
   onSend: (override?: string) => void;
+  onStop: () => void;
   onToggleMastered: () => void;
   onClearChat: () => void;
   onSelectProblem: (p: string) => void;
@@ -23,6 +25,7 @@ interface ChatPanelProps {
 }
 
 const ChatPanel = React.memo(function ChatPanel({
+  theme,
   selectedProblem,
   messages,
   input,
@@ -30,6 +33,7 @@ const ChatPanel = React.memo(function ChatPanel({
   masteredProblems,
   onInputChange,
   onSend,
+  onStop,
   onToggleMastered,
   onClearChat,
   onSelectProblem,
@@ -52,14 +56,14 @@ const ChatPanel = React.memo(function ChatPanel({
   };
 
   return (
-    <div className="flex flex-col h-full forge-panel border-l border-blue-500/10">
+    <div className="flex flex-col h-full forge-panel border-l border-border-subtle bg-bg-surface">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-blue-500/10 shrink-0 space-y-2 bg-[#0f0f1a]">
+      <div className="px-4 py-3 border-b border-border-subtle shrink-0 space-y-2 bg-bg-surface">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield size={18} className="text-blue-400" />
             <div>
-              <div className="text-sm font-black uppercase tracking-widest text-[#e2e8f0]">
+              <div className="text-sm font-black uppercase tracking-widest text-text-primary">
                 Forge AI
               </div>
               <div className="text-[9px] text-blue-400/60 uppercase tracking-wider">
@@ -69,7 +73,7 @@ const ChatPanel = React.memo(function ChatPanel({
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/5 text-[#475569] hover:text-[#94a3b8] transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded hover:bg-bg-card text-text-muted hover:text-text-secondary transition-colors"
             title="Close Panel"
           >
             <X size={14} />
@@ -78,8 +82,8 @@ const ChatPanel = React.memo(function ChatPanel({
 
         {/* Prerequisites */}
         {prereqs && prereqs.length > 0 && (
-          <div className="p-2 rounded bg-[#0a0a0f] border border-blue-500/15 space-y-1">
-            <div className="flex items-center gap-1 text-[9px] font-bold uppercase text-[#475569]">
+          <div className="p-2 rounded bg-bg-base border border-border-subtle space-y-1">
+            <div className="flex items-center gap-1 text-[9px] font-bold uppercase text-text-muted">
               <ChevronRight size={9} />
               Prerequisites
             </div>
@@ -109,6 +113,7 @@ const ChatPanel = React.memo(function ChatPanel({
               transition={{ duration: 0.2 }}
             >
               <ChatMessage
+                theme={theme}
                 message={msg}
                 isLatest={msg.id === messages[messages.length - 1]?.id}
               />
@@ -119,10 +124,10 @@ const ChatPanel = React.memo(function ChatPanel({
         {/* Loading indicator */}
         {isLoading && (
           <div className="flex gap-3 items-center forge-in">
-            <div className="w-8 h-8 rounded-full bg-[#141428] border border-blue-500/30 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-bg-elevated border border-border-default flex items-center justify-center">
               <Loader2 size={12} className="text-blue-400 animate-spin" />
             </div>
-            <div className="px-4 py-2 rounded-lg bg-[#0f0f1a] border border-blue-500/15">
+            <div className="px-4 py-2 rounded-lg bg-bg-surface border border-border-subtle">
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
                   {[0, 1, 2].map(i => (
@@ -148,6 +153,7 @@ const ChatPanel = React.memo(function ChatPanel({
         isLoading={isLoading}
         onValueChange={onInputChange}
         onSend={() => onSend()}
+        onStop={onStop}
         onQuickAction={handleQuickAction}
         onClearChat={onClearChat}
       />

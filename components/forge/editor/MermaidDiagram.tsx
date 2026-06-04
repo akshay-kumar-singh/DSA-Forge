@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 
 interface MermaidDiagramProps {
   chart: string;
+  theme: 'dark' | 'light';
 }
 
-export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
+export default function MermaidDiagram({ chart, theme }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,10 +18,26 @@ export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
     const render = async () => {
       try {
         const mermaid = (await import('mermaid')).default;
+        const isLight = theme === 'light';
+        
         mermaid.initialize({
           startOnLoad: false,
-          theme: 'dark',
-          themeVariables: {
+          theme: isLight ? 'default' : 'dark',
+          themeVariables: isLight ? {
+            primaryColor: '#f1f5f9',
+            primaryTextColor: '#0f172a',
+            primaryBorderColor: '#2563eb',
+            lineColor: '#2563eb',
+            secondaryColor: '#e2e8f0',
+            tertiaryColor: '#f1f5f9',
+            background: 'transparent',
+            mainBkg: '#ffffff',
+            nodeBorder: '#2563eb',
+            clusterBkg: '#f8fafc',
+            titleColor: '#0f172a',
+            edgeLabelBackground: '#ffffff',
+            textColor: '#0f172a',
+          } : {
             primaryColor: '#1e293b',
             primaryTextColor: '#e2e8f0',
             primaryBorderColor: '#3b82f6',
@@ -55,7 +72,7 @@ export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
 
     render();
     return () => { cancelled = true; };
-  }, [chart]);
+  }, [chart, theme]);
 
   if (error) {
     return (
@@ -68,7 +85,7 @@ export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
   return (
     <div
       ref={containerRef}
-      className="mermaid-wrap my-3 p-4 rounded-lg bg-[#0d1117] border border-blue-500/20 overflow-x-auto"
+      className="mermaid-wrap my-3 p-4 rounded-lg bg-bg-base border border-border-default overflow-x-auto"
     />
   );
 }

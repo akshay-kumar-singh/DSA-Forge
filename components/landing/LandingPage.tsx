@@ -1,20 +1,20 @@
-'use client';
-
 import dynamic from 'next/dynamic';
 import { motion } from 'motion/react';
-import { Zap, Target, Shield, ChevronRight } from 'lucide-react';
+import { Zap, Target, Shield, ChevronRight, Sun, Moon } from 'lucide-react';
 
 const ThreeBackground = dynamic(() => import('./ThreeBackground'), { ssr: false });
 
 interface LandingPageProps {
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
   masteredCount: number;
   totalProblems: number;
   onEnter: () => void;
 }
 
-export default function LandingPage({ masteredCount, totalProblems, onEnter }: LandingPageProps) {
+export default function LandingPage({ theme, onToggleTheme, masteredCount, totalProblems, onEnter }: LandingPageProps) {
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-[#0a0a0f] flex flex-col items-center justify-center tech-grid">
+    <div className="relative h-screen w-full overflow-hidden bg-bg-base flex flex-col items-center justify-center tech-grid">
       {/* Three.js animated background */}
       <ThreeBackground active />
 
@@ -24,6 +24,17 @@ export default function LandingPage({ masteredCount, totalProblems, onEnter }: L
           className="absolute w-full h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"
           style={{ animation: 'scan 6s linear infinite' }}
         />
+      </div>
+
+      {/* Theme toggle in top right */}
+      <div className="absolute top-6 right-6 z-30">
+        <button
+          onClick={onToggleTheme}
+          className="forge-btn w-9 h-9 px-0 flex items-center justify-center border-border-default text-blue-400"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
       </div>
 
       {/* Content */}
@@ -44,7 +55,7 @@ export default function LandingPage({ masteredCount, totalProblems, onEnter }: L
         {/* Title */}
         <div className="space-y-2">
           <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none">
-            <span className="text-[#e2e8f0]">DSA </span>
+            <span className="text-text-primary">DSA </span>
             <span
               className="text-transparent"
               style={{ WebkitTextStroke: '2px #3b82f6', filter: 'drop-shadow(0 0 20px rgba(59,130,246,0.5))' }}
@@ -52,7 +63,7 @@ export default function LandingPage({ masteredCount, totalProblems, onEnter }: L
               FORGE
             </span>
           </h1>
-          <p className="text-base font-medium text-[#94a3b8] tracking-wide">
+          <p className="text-base font-medium text-text-secondary tracking-wide">
             Your Personal Training Facility. No Answers. Only Growth.
           </p>
         </div>
@@ -66,7 +77,7 @@ export default function LandingPage({ masteredCount, totalProblems, onEnter }: L
           ].map(({ icon: Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2 px-3 py-1.5 rounded bg-[#0f0f1a] border border-blue-500/15 text-[11px] font-bold text-[#94a3b8]"
+              className="flex items-center gap-2 px-3 py-1.5 rounded bg-bg-surface border border-border-subtle text-[11px] font-bold text-text-secondary"
             >
               <Icon size={11} className="text-blue-400" />
               {label}
@@ -92,12 +103,12 @@ export default function LandingPage({ masteredCount, totalProblems, onEnter }: L
         <div className="flex items-center gap-8 pt-2">
           {[
             { label: 'Mastered', value: masteredCount, color: 'text-blue-400' },
-            { label: 'Total Missions', value: totalProblems, color: 'text-[#94a3b8]' },
+            { label: 'Total Missions', value: totalProblems, color: 'text-text-secondary' },
             { label: 'Mode', value: 'FORGE', color: 'text-red-400' },
           ].map(({ label, value, color }) => (
             <div key={label} className="text-center">
               <div className={`text-2xl font-black ${color}`}>{value}</div>
-              <div className="text-[9px] font-bold uppercase tracking-wider text-[#475569]">{label}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-text-muted">{label}</div>
             </div>
           ))}
         </div>

@@ -1,22 +1,21 @@
-import { Save, Play, Settings, StickyNote, Cpu, Eye, Loader2, Menu, MessageSquare } from 'lucide-react';
+import { Save, Play, Settings, StickyNote, Loader2, Menu, MessageSquare, Sun, Moon } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { Language } from '@/lib/types';
 
 interface EditorToolbarProps {
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
   problem: string;
   language: Language;
   isSaving: boolean;
   isRunning: boolean;
   isAiLoading: boolean;
   showNotes: boolean;
-  showApproach: boolean;
   showLeftPanel: boolean;
   showRightPanel: boolean;
   onSave: () => void;
   onRun: () => void;
-  onGetIntel: () => void;
   onToggleNotes: () => void;
-  onToggleApproach: () => void;
   onOpenSettings: () => void;
   onLanguageChange: (lang: Language) => void;
   onToggleLeftPanel: () => void;
@@ -24,47 +23,40 @@ interface EditorToolbarProps {
 }
 
 export default function EditorToolbar({
+  theme,
+  onToggleTheme,
   problem,
   language,
   isSaving,
   isRunning,
   isAiLoading,
   showNotes,
-  showApproach,
   showLeftPanel,
   showRightPanel,
   onSave,
   onRun,
-  onGetIntel,
   onToggleNotes,
-  onToggleApproach,
   onOpenSettings,
   onLanguageChange,
   onToggleLeftPanel,
   onToggleRightPanel,
 }: EditorToolbarProps) {
   return (
-    <header className="h-14 border-b border-blue-500/10 flex items-center justify-between px-4 shrink-0 bg-[#0f0f1a]">
-      {/* Problem name + AI watching indicator */}
+    <header className="h-14 border-b border-border-subtle flex items-center justify-between px-4 shrink-0 bg-bg-surface">
+      {/* Problem name */}
       <div className="flex items-center gap-3 min-w-0">
         {!showLeftPanel && (
           <button
             onClick={onToggleLeftPanel}
-            className="forge-btn w-9 h-9 px-0 flex items-center justify-center border-blue-500/30 text-blue-400"
+            className="forge-btn w-9 h-9 px-0 flex items-center justify-center border-border-default text-blue-400"
             title="Open Missions"
           >
             <Menu size={16} />
           </button>
         )}
-        <h2 className="font-black text-sm uppercase tracking-tight text-[#e2e8f0] truncate max-w-[220px]">
+        <h2 className="font-black text-sm uppercase tracking-tight text-text-primary truncate max-w-[220px]">
           {problem}
         </h2>
-        <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded bg-blue-500/8 border border-blue-500/20">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 dot-blink" />
-          <span className="text-[9px] font-bold uppercase tracking-widest text-blue-400/80">
-            AI Monitoring
-          </span>
-        </div>
       </div>
 
       {/* Actions */}
@@ -78,16 +70,6 @@ export default function EditorToolbar({
         >
           <Save size={14} />
           <span className="hidden xl:inline">{isSaving ? 'Saved' : 'Save'}</span>
-        </button>
-
-        {/* Approach Board */}
-        <button
-          onClick={onToggleApproach}
-          className={clsx('forge-btn h-9', showApproach && 'border-blue-500/60 text-blue-400')}
-          title="Approach Board"
-        >
-          <Eye size={14} />
-          <span className="hidden xl:inline">Approach</span>
         </button>
 
         {/* Field Notes / TlDraw */}
@@ -111,23 +93,12 @@ export default function EditorToolbar({
           <span className="hidden sm:inline">{isRunning ? 'Running' : 'Run'}</span>
         </button>
 
-        {/* Get Intel */}
-        <button
-          onClick={onGetIntel}
-          disabled={isAiLoading}
-          className="forge-btn h-9 border-yellow-500/40 text-yellow-400 hover:border-yellow-400 hover:shadow-[0_0_8px_rgba(234,179,8,0.2)]"
-          title="Get Intel — AI reviews your current approach"
-        >
-          <Cpu size={14} />
-          <span className="hidden xl:inline">Get Intel</span>
-        </button>
-
         {/* Language selector */}
         <select
           value={language}
           onChange={(e) => onLanguageChange(e.target.value as Language)}
           aria-label="Language"
-          className="h-9 px-2 text-[11px] font-black uppercase bg-[#141428] border border-blue-500/20 text-[#94a3b8] rounded outline-none cursor-pointer hover:border-blue-500/40 transition-colors hidden sm:block"
+          className="h-9 px-2 text-[11px] font-black uppercase bg-bg-elevated border border-border-default text-text-secondary rounded outline-none cursor-pointer hover:border-blue-500/40 transition-colors hidden sm:block"
         >
           <option value="javascript">JS</option>
           <option value="python">PY</option>
@@ -135,23 +106,32 @@ export default function EditorToolbar({
           <option value="cpp">C++</option>
         </select>
 
-        {/* Settings */}
+        {/* Theme Toggle — bigger icon */}
         <button
-          onClick={onOpenSettings}
-          className="forge-btn h-9 w-9 px-0 flex items-center justify-center"
-          title="Settings"
+          onClick={onToggleTheme}
+          className="forge-btn h-10 w-10 px-0 flex items-center justify-center border-border-default text-text-secondary"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
         >
-          <Settings size={18} />
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
-        {/* Chat Toggle */}
+        {/* Settings — bigger icon */}
+        <button
+          onClick={onOpenSettings}
+          className="forge-btn h-10 w-10 px-0 flex items-center justify-center"
+          title="Settings"
+        >
+          <Settings size={20} />
+        </button>
+
+        {/* Chat Toggle — bigger icon */}
         {!showRightPanel && (
           <button
             onClick={onToggleRightPanel}
-            className="forge-btn w-9 h-9 px-0 flex items-center justify-center border-blue-500/30 text-blue-400"
+            className="forge-btn h-10 w-10 px-0 flex items-center justify-center border-border-default text-blue-400"
             title="Open AI Chat"
           >
-            <MessageSquare size={16} />
+            <MessageSquare size={20} />
           </button>
         )}
       </div>

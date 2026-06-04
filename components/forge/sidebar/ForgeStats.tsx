@@ -21,7 +21,7 @@ export default function ForgeStats({ masteredCount, totalProblems }: ForgeStatsP
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Shield size={12} className="text-blue-400" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">
             Forge Stats
           </span>
         </div>
@@ -30,13 +30,13 @@ export default function ForgeStats({ masteredCount, totalProblems }: ForgeStatsP
 
       {/* Progress bar */}
       <div className="space-y-1">
-        <div className="w-full h-1.5 bg-[#0a0a0f] rounded-full overflow-hidden border border-blue-500/10">
+        <div className="w-full h-1.5 bg-bg-base rounded-full overflow-hidden border border-border-subtle">
           <div
             className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-1000"
             style={{ width: `${pct}%` }}
           />
         </div>
-        <div className="flex justify-between text-[9px] font-bold text-[#475569] uppercase">
+        <div className="flex justify-between text-[9px] font-bold text-text-muted uppercase">
           <span>Initiate</span>
           <span>Commander</span>
         </div>
@@ -46,11 +46,11 @@ export default function ForgeStats({ masteredCount, totalProblems }: ForgeStatsP
       <div className="grid grid-cols-2 gap-1 pt-1">
         {[
           { label: 'Mastered', value: masteredCount, color: 'text-blue-400' },
-          { label: 'Total', value: totalProblems, color: 'text-[#475569]' },
+          { label: 'Total', value: totalProblems, color: 'text-text-muted' },
         ].map(({ label, value, color }) => (
           <div key={label} className="text-center">
             <div className={`text-base font-black ${color}`}>{value}</div>
-            <div className="text-[8px] font-bold uppercase text-[#475569]">{label}</div>
+            <div className="text-[8px] font-bold uppercase text-text-muted">{label}</div>
           </div>
         ))}
       </div>

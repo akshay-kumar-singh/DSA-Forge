@@ -29,7 +29,7 @@ export default function ForgeOutput({ output, height, onClose, onResize }: Forge
   return (
     <div
       style={{ height }}
-      className="absolute bottom-0 left-0 right-0 flex flex-col z-30 bg-[#0d1117] border-t border-blue-500/20 forge-in"
+      className="absolute bottom-0 left-0 right-0 flex flex-col z-30 bg-bg-surface border-t border-border-default forge-in"
     >
       {/* Drag handle */}
       <div
@@ -50,15 +50,15 @@ export default function ForgeOutput({ output, height, onClose, onResize }: Forge
           </div>
           <button
             onClick={onClose}
-            className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/5 transition-colors text-[#475569] hover:text-[#94a3b8]"
+            className="w-6 h-6 flex items-center justify-center rounded hover:bg-bg-card transition-colors text-text-muted hover:text-text-secondary"
           >
             <X size={12} />
           </button>
         </div>
 
         {/* Output */}
-        <div className="flex-1 overflow-auto bg-black/40 rounded p-3 border border-white/5">
-          <pre className="whitespace-pre-wrap text-[12px] font-mono text-[#e2e8f0] leading-relaxed">
+        <div className="flex-1 overflow-auto bg-bg-base rounded p-3 border border-border-subtle">
+          <pre className="whitespace-pre-wrap text-[12px] font-mono text-text-primary leading-relaxed">
             {output}
           </pre>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Send, MessageSquare, Zap, RotateCcw } from 'lucide-react';
+import { Send, Square, MessageSquare, Zap, RotateCcw } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface ChatInputProps {
@@ -8,12 +8,13 @@ interface ChatInputProps {
   isLoading: boolean;
   onValueChange: (v: string) => void;
   onSend: () => void;
+  onStop: () => void;
   onQuickAction: (msg: string) => void;
   onClearChat: () => void;
 }
 
 const QUICK_ACTIONS = [
-  { label: 'Review Code', icon: MessageSquare, msg: 'Review my current code and tell me what I am doing right and what to improve.' },
+  { label: 'Review Code', icon: MessageSquare, msg: 'Analyze my current code. Check what is correct, what is wrong, and where I am making mistakes. Provide the correct direction and next steps/approach. Keep it short, focused, and conceptual without giving away the full solution.' },
 ];
 
 export default function ChatInput({
@@ -21,18 +22,23 @@ export default function ChatInput({
   isLoading,
   onValueChange,
   onSend,
+  onStop,
   onQuickAction,
   onClearChat,
 }: ChatInputProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSend();
+      if (isLoading) {
+        onStop();
+      } else {
+        onSend();
+      }
     }
   };
 
   return (
-    <div className="border-t border-blue-500/10 p-4 space-y-3 bg-[#0f0f1a] shrink-0">
+    <div className="border-t border-border-subtle p-4 space-y-3 bg-bg-surface shrink-0">
       {/* Input row */}
       <div className="flex gap-2">
         <textarea
@@ -41,16 +47,28 @@ export default function ChatInput({
           onKeyDown={handleKeyDown}
           placeholder="Ask FORGE AI..."
           rows={2}
-          className="flex-1 bg-[#0a0a0f] border border-blue-500/20 rounded px-3 py-2 text-sm text-[#e2e8f0] placeholder:text-[#334155] resize-none outline-none focus:border-blue-500/50 transition-colors font-sans leading-relaxed"
+          className="flex-1 bg-bg-base border border-border-default rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted resize-none outline-none focus:border-blue-500/50 transition-colors font-sans leading-relaxed"
         />
-        <button
-          onClick={onSend}
-          disabled={isLoading || !value.trim()}
-          className="forge-btn forge-btn-primary w-10 px-0 flex items-center justify-center self-stretch rounded"
-          title="Send (Enter)"
-        >
-          <Send size={14} />
-        </button>
+
+        {/* Send / Stop button */}
+        {isLoading ? (
+          <button
+            onClick={onStop}
+            className="forge-btn w-10 px-0 flex items-center justify-center self-stretch rounded-lg border-red-500/40 text-red-400 hover:border-red-500 hover:bg-red-500/10 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+            title="Stop generating (Enter)"
+          >
+            <Square size={14} className="fill-current" />
+          </button>
+        ) : (
+          <button
+            onClick={onSend}
+            disabled={!value.trim()}
+            className="forge-btn forge-btn-primary w-10 px-0 flex items-center justify-center self-stretch rounded-lg"
+            title="Send (Enter)"
+          >
+            <Send size={14} />
+          </button>
+        )}
       </div>
 
       {/* Quick actions */}
@@ -69,7 +87,7 @@ export default function ChatInput({
 
         <button
           onClick={onClearChat}
-          className="forge-btn h-8 text-[10px] gap-1.5 text-[#475569] hover:text-[#94a3b8] ml-auto"
+          className="forge-btn h-8 text-[10px] gap-1.5 text-text-muted hover:text-text-secondary ml-auto"
           title="Clear chat history"
         >
           <RotateCcw size={11} />

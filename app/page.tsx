@@ -22,18 +22,6 @@ function createMessage(role: 'user' | 'assistant', content: string): Message {
   return { id: createMsgId(), role, content };
 }
 
-const INITIAL_MESSAGE: Message = {
-  id: 'initial-welcome',
-  role: 'assistant',
-  content: `**FORGE AI online.** 🛡️
-
-Welcome to the DSA Forge Training Facility. I'm your AI coach — I'll guide you through every problem without ever giving you the answer.
-
-Select a mission from the left panel and start coding. Ask me for hints, code reviews, or concept explanations anytime. I'll escalate hints naturally as you ask — starting vague, getting more specific each time.
-
-*Remember: the struggle is the point. Let's forge something.*`,
-};
-
 const USER_ID = '00000000-0000-0000-0000-000000000000';
 
 // Max messages to send to AI for context (keeps token usage reasonable)
@@ -42,6 +30,25 @@ const MAX_AI_HISTORY = 20;
 export default function DSAForge() {
   const [view, setView] = useState<View>('home');
   const [orientation, setOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  // Load theme on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('dsa-forge-theme') as 'dark' | 'light' | null;
+    if (saved) {
+      setTheme(saved);
+    }
+  }, []);
+
+  // Update theme class / attribute on root
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('dsa-forge-theme', theme);
+  }, [theme]);
+
+  const handleToggleTheme = useCallback(() => {
+    setTheme(t => t === 'dark' ? 'light' : 'dark');
+  }, []);
 
   // ── Problem State ───────────────────────────────────
   const [selectedProblem, setSelectedProblem] = useState("Training: Custom Sandbox");
@@ -61,7 +68,7 @@ export default function DSAForge() {
   const [renderTick, setRenderTick] = useState(0); // Trigger re-renders when refs load data
 
   // ── Chat State (ephemeral — NOT saved to DB) ───────
-  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -78,6 +85,7 @@ export default function DSAForge() {
   const lastReviewRef = useRef(lastReviewDate);
   const messagesRef = useRef(messages);
   const lastEditorActivity = useRef<number>(Date.now());
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Keep state-backed refs in sync
   useEffect(() => { masteredRef.current = masteredProblems; }, [masteredProblems]);
@@ -128,20 +136,6 @@ export default function DSAForge() {
     }
   }, [selectedProblem, language, view]);
 
-  // ── Stuck Timer: 10 min idle → proactive nudge ──────
-  useEffect(() => {
-    if (view !== 'forge') return;
-    const interval = setInterval(() => {
-      const idleMs = Date.now() - lastEditorActivity.current;
-      if (idleMs > 10 * 60 * 1000 && !isLoading) {
-        lastEditorActivity.current = Date.now(); // reset so it doesn't spam
-        handleSend(`[STUCK_TIMER] The user hasn't typed anything in the editor for 10 minutes. Send a short, encouraging message and offer a gentle Level 1 hint for the current problem without them asking. Be proactive and warm.`);
-      }
-    }, 60_000); // check every minute
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, isLoading]);
-
   // ── Save (uses refs for always-fresh state, saves to MongoDB) ─────────
   const handleSave = useCallback(async () => {
     setIsSaving(true);
@@ -182,11 +176,10 @@ export default function DSAForge() {
     
     // Reset chat to fresh state for the new problem
     setMessages([
-      INITIAL_MESSAGE,
       createMessage('assistant',
         isTraining
-          ? `**${prob}** — Training Module loaded. 📡\n\nI'm ready to teach this concept from the ground up. Tell me when you're ready to start, or ask me anything about this topic!`
-          : `**${prob}** — Mission loaded. 🎯\n\nEditor is ready. Write your approach on the Approach Board before coding if you'd like my input on your direction. Ask for a hint anytime.`
+          ? `**${prob}** — Training loaded. 📡`
+          : `**${prob}** — Mission loaded. 🎯`
       ),
     ]);
 
@@ -241,12 +234,14 @@ export default function DSAForge() {
     setTimeout(() => handleSave(), 50);
   }, [handleSave]);
 
-  // ── Get Intel ────────────────────────────────────────
-  const handleGetIntel = useCallback(() => {
-    handleSend(
-      `Analyze my current code for ${selectedProblem}. Tell me: (1) what I'm doing conceptually right so far, and (2) what's the most important thing I should think about next. Do NOT give me any code — only conceptual direction.`
-    );
-  }, [selectedProblem]);
+  // ── Stop AI Generation ────────────────────────────────
+  const handleStop = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+  }, []);
 
   // ── Send to AI ───────────────────────────────────────
   const handleSend = useCallback(async (overrideInput?: string) => {
@@ -266,6 +261,10 @@ export default function DSAForge() {
     }
     if (!overrideInput) setInput('');
     setIsLoading(true);
+
+    // Create a fresh AbortController for this request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const systemPrompt = buildForgeSystemPrompt(
       selectedProblem,
@@ -298,21 +297,27 @@ export default function DSAForge() {
           systemInstruction: systemPrompt,
         });
 
-        const result = await model.generateContent({
+        // Use streaming for Gemini so we can abort mid-generation
+        const streamResult = await model.generateContentStream({
           contents: [...apiHistory, { role: 'user', parts: [{ text: messageText }] }],
         });
-        content = result.response.text();
+
+        // Collect streamed chunks, abort-aware
+        for await (const chunk of streamResult.stream) {
+          if (controller.signal.aborted) break;
+          content += chunk.text();
+        }
       } else {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            // Fix: Always send the user message to the API, even if it's internal
             messages: [...recentMessages, { role: 'user', content: messageText }],
             provider: selectedProvider.id,
             model: selectedModel,
             systemInstruction: systemPrompt,
           }),
+          signal: controller.signal,
         });
 
         if (!res.ok) {
@@ -323,12 +328,19 @@ export default function DSAForge() {
         content = data.text;
       }
 
-      const assistantMsg = createMessage('assistant',
-        content || "I'm having trouble formulating a response. Try again?"
-      );
-      setMessages(prev => [...prev, assistantMsg]);
+      // Only add message if not aborted
+      if (!controller.signal.aborted && content.trim()) {
+        const assistantMsg = createMessage('assistant',
+          content || "I'm having trouble formulating a response. Try again?"
+        );
+        setMessages(prev => [...prev, assistantMsg]);
+      }
     } catch (err: unknown) {
+      // Silently ignore abort errors — user intentionally stopped
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       const errMsg = err instanceof Error ? err.message : String(err);
+      // Also ignore abort-like errors from Gemini SDK
+      if (errMsg.includes('abort') || errMsg.includes('cancel')) return;
       const isQuota = errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('quota');
       setMessages(prev => [...prev, createMessage('assistant',
         isQuota
@@ -336,10 +348,32 @@ export default function DSAForge() {
           : `⚠️ **Connection error:**\n\`\`\`\n${errMsg}\n\`\`\`\nTry switching providers in Settings.`
       )]);
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, isLoading, selectedProblem, language, selectedProvider, selectedModel]);
+
+  // ── Review Code ──────────────────────────────────────
+  const handleReviewCode = useCallback(() => {
+    handleSend(
+      `Analyze my current code for ${selectedProblem}. Check what is correct, what is wrong, and where I am making mistakes. Provide the correct direction and next steps/approach. Keep it short, focused, and conceptual without giving away the full solution.`
+    );
+  }, [selectedProblem, handleSend]);
+
+  // ── Stuck Timer: 10 min idle → proactive nudge ──────
+  useEffect(() => {
+    if (view !== 'forge') return;
+    const interval = setInterval(() => {
+      const idleMs = Date.now() - lastEditorActivity.current;
+      if (idleMs > 10 * 60 * 1000 && !isLoading) {
+        lastEditorActivity.current = Date.now(); // reset so it doesn't spam
+        handleSend(`[STUCK_TIMER] The user hasn't typed anything in the editor for 10 minutes. Send a short, encouraging message and offer a gentle Level 1 hint for the current problem without them asking. Be proactive and warm.`);
+      }
+    }, 60_000); // check every minute
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, isLoading]);
 
   // ── Code change (memoized — fixes editor lag) ───────
   const handleCodeChange = useCallback((code: string) => {
@@ -376,7 +410,7 @@ export default function DSAForge() {
 
   // ── Clear Chat (local only — no DB sync needed) ─────
   const handleClearChat = useCallback(() => {
-    setMessages([INITIAL_MESSAGE]);
+    setMessages([]);
     toast.success('Chat cleared.');
   }, []);
 
@@ -422,12 +456,16 @@ export default function DSAForge() {
         masteredCount={masteredProblems.length}
         totalProblems={TOTAL_PROBLEMS}
         onEnter={() => setView('forge')}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
     );
   }
 
   return (
     <ForgePage
+      theme={theme}
+      onToggleTheme={handleToggleTheme}
       selectedProblem={selectedProblem}
       masteredProblems={masteredProblems}
       lastReviewDate={lastReviewDate}
@@ -455,7 +493,7 @@ export default function DSAForge() {
       onCodeChange={handleCodeChange}
       onSave={handleSave}
       onRun={handleRun}
-      onGetIntel={handleGetIntel}
+      onReviewCode={handleReviewCode}
       onToggleNotes={handleToggleNotes}
       onToggleApproach={handleToggleApproach}
       onOpenSettings={handleOpenSettings}
@@ -468,6 +506,7 @@ export default function DSAForge() {
       onEditorActivity={handleEditorActivity}
       onInputChange={setInput}
       onSend={handleSend}
+      onStop={handleStop}
       onToggleMastered={handleToggleMastered}
       onClearChat={handleClearChat}
       onProviderChange={handleProviderChange}

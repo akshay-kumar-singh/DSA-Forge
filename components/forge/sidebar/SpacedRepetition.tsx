@@ -19,7 +19,7 @@ export default function SpacedRepetition({ lastReviewDate, onSelectProblem }: Sp
     <div className="p-3 forge-card space-y-2 mx-2 mt-2">
       <div className="flex items-center gap-1.5">
         <Clock size={11} className="text-blue-400" />
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">
           Due for Review
         </span>
       </div>
@@ -31,9 +31,9 @@ export default function SpacedRepetition({ lastReviewDate, onSelectProblem }: Sp
             <button
               key={prob}
               onClick={() => onSelectProblem(prob)}
-              className="w-full flex items-center justify-between px-2 py-1.5 rounded bg-[#0a0a0f] hover:bg-blue-500/8 border border-transparent hover:border-blue-500/20 transition-all text-left"
+              className="w-full flex items-center justify-between px-2 py-1.5 rounded bg-bg-base hover:bg-blue-500/8 border border-transparent hover:border-blue-500/20 transition-all text-left"
             >
-              <span className="text-[10px] font-medium text-[#94a3b8] truncate">{prob}</span>
+              <span className="text-[10px] font-medium text-text-secondary truncate">{prob}</span>
               <span className={clsx(
                 'text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 ml-2',
                 overdue ? 'bg-red-500/15 text-red-400' : 'bg-green-500/15 text-green-400'

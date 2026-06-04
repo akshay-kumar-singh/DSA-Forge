@@ -4,11 +4,12 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import Editor from '@monaco-editor/react';
 import EditorToolbar from './EditorToolbar';
 import ForgeOutput from './ForgeOutput';
-import ApproachBoard from './ApproachBoard';
 import FieldNotes from './FieldNotes';
 import type { Language } from '@/lib/types';
 
 interface EditorPanelProps {
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
   problem: string;
   language: Language;
   code: string;
@@ -18,22 +19,17 @@ interface EditorPanelProps {
   isRunning: boolean;
   isAiLoading: boolean;
   showNotes: boolean;
-  showApproach: boolean;
   isMastered: boolean;
   noteValue: string;
-  approachValue: string;
   editorFontSize: number;
   editorFontFamily: string;
   onCodeChange: (code: string) => void;
   onSave: () => void;
   onRun: () => void;
-  onGetIntel: () => void;
   onToggleNotes: () => void;
-  onToggleApproach: () => void;
   onOpenSettings: () => void;
   onLanguageChange: (lang: Language) => void;
   onNoteChange: (val: string) => void;
-  onApproachChange: (val: string) => void;
   onOutputClose: () => void;
   onOutputResize: (h: number) => void;
   onEditorActivity: () => void;
@@ -44,6 +40,8 @@ interface EditorPanelProps {
 }
 
 const EditorPanel = React.memo(function EditorPanel({
+  theme,
+  onToggleTheme,
   problem,
   language,
   code,
@@ -54,21 +52,16 @@ const EditorPanel = React.memo(function EditorPanel({
   isAiLoading,
   isMastered,
   showNotes,
-  showApproach,
   noteValue,
-  approachValue,
   editorFontSize,
   editorFontFamily,
   onCodeChange,
   onSave,
   onRun,
-  onGetIntel,
   onToggleNotes,
-  onToggleApproach,
   onOpenSettings,
   onLanguageChange,
   onNoteChange,
-  onApproachChange,
   onOutputClose,
   onOutputResize,
   onEditorActivity,
@@ -149,20 +142,19 @@ const EditorPanel = React.memo(function EditorPanel({
   }), [editorFontSize, editorFontFamily]);
 
   return (
-    <div className="flex flex-col h-full min-w-0 bg-[#0a0a0f]">
+    <div className="flex flex-col h-full min-w-0 bg-bg-base">
       <EditorToolbar
+        theme={theme}
+        onToggleTheme={onToggleTheme}
         problem={problem}
         language={language}
         isSaving={isSaving}
         isRunning={isRunning}
         isAiLoading={isAiLoading}
         showNotes={showNotes}
-        showApproach={showApproach}
         onSave={onSave}
         onRun={onRun}
-        onGetIntel={onGetIntel}
         onToggleNotes={onToggleNotes}
-        onToggleApproach={onToggleApproach}
         onOpenSettings={onOpenSettings}
         onLanguageChange={onLanguageChange}
         showLeftPanel={showLeftPanel}
@@ -177,7 +169,7 @@ const EditorPanel = React.memo(function EditorPanel({
           height="100%"
           language={language}
           value={code}
-          theme="vs-dark"
+          theme={theme === 'dark' ? 'vs-dark' : 'light'}
           onChange={stableOnChange}
           onMount={handleEditorMount}
           options={editorOptions}
@@ -192,15 +184,6 @@ const EditorPanel = React.memo(function EditorPanel({
             onResize={onOutputResize}
           />
         )}
-
-        {/* Approach Board overlay */}
-        <ApproachBoard
-          show={showApproach}
-          problem={problem}
-          value={approachValue}
-          onChange={onApproachChange}
-          onClose={onToggleApproach}
-        />
 
         {/* Field Notes / Whiteboard overlay */}
         <FieldNotes
