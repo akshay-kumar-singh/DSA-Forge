@@ -24,64 +24,97 @@ interface LogData {
   activities: Activity[];
 }
 
-// Helper to update a file directly in GitHub via their REST API
-async function updateGitHubFile(
-  filePath: string, 
-  updateFn: (oldContent: string) => string, 
-  commitMsg: string
-) {
-  const token = process.env.GITHUB_PAT; 
-  const owner = process.env.GITHUB_USERNAME; 
-  const repo = process.env.GITHUB_TRACKER_REPO;
-
-  if (!token || !owner || !repo) {
-    throw new Error('Missing GitHub credentials in environment variables');
-  }
-
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
-  
-  // 1. Get the current file (to get its SHA and current content)
-  const getRes = await fetch(url, {
+async function getGitHubFileContent(token: string, owner: string, repo: string, path: string) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const res = await fetch(url, {
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json'
-    }
-  });
-
-  let sha: string | undefined = undefined;
-  let oldContent = '';
-
-  if (getRes.ok) {
-    const data = await getRes.json();
-    sha = data.sha;
-    // GitHub API returns content as base64
-    oldContent = Buffer.from(data.content, 'base64').toString('utf-8');
-  } else if (getRes.status !== 404) {
-    throw new Error(`Failed to fetch ${filePath} from GitHub`);
-  }
-
-  // 2. Generate new content using the provided function
-  const newContent = updateFn(oldContent);
-
-  // 3. Commit the new file
-  const putRes = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github.v3+json',
     },
-    body: JSON.stringify({
-      message: commitMsg,
-      content: Buffer.from(newContent).toString('base64'),
-      ...(sha ? { sha } : {}) // Must include sha if updating an existing file
-    })
   });
-
-  if (!putRes.ok) {
-    const errorData = await putRes.json();
-    throw new Error(`Failed to commit ${filePath}: ${errorData.message}`);
+  if (res.ok) {
+    const data = await res.json();
+    return Buffer.from(data.content, 'base64').toString('utf-8');
+  } else if (res.status === 404) {
+    return null;
+  } else {
+    throw new Error(`Failed to fetch ${path}`);
   }
+}
+
+async function commitMultipleFiles(
+  token: string,
+  owner: string,
+  repo: string,
+  commitMsg: string,
+  files: { path: string; content: string }[]
+) {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  };
+  const baseUrl = `https://api.github.com/repos/${owner}/${repo}`;
+
+  // 1. Get default branch
+  const repoRes = await fetch(baseUrl, { headers });
+  if (!repoRes.ok) throw new Error('Failed to fetch repo info');
+  const repoData = await repoRes.json();
+  const branch = repoData.default_branch;
+
+  // 2. Get latest commit SHA
+  const refRes = await fetch(`${baseUrl}/git/refs/heads/${branch}`, { headers });
+  if (!refRes.ok) throw new Error(`Failed to fetch branch ${branch}`);
+  const refData = await refRes.json();
+  const latestCommitSha = refData.object.sha;
+
+  // 3. Get base tree SHA
+  const commitRes = await fetch(`${baseUrl}/git/commits/${latestCommitSha}`, { headers });
+  if (!commitRes.ok) throw new Error('Failed to fetch latest commit');
+  const commitData = await commitRes.json();
+  const baseTreeSha = commitData.tree.sha;
+
+  // 4. Create new tree with both files
+  const treePayload = {
+    base_tree: baseTreeSha,
+    tree: files.map(f => ({
+      path: f.path,
+      mode: '100644',
+      type: 'blob',
+      content: f.content,
+    })),
+  };
+  const treeRes = await fetch(`${baseUrl}/git/trees`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(treePayload),
+  });
+  if (!treeRes.ok) throw new Error('Failed to create git tree');
+  const treeData = await treeRes.json();
+  const newTreeSha = treeData.sha;
+
+  // 5. Create new commit
+  const newCommitPayload = {
+    message: commitMsg,
+    tree: newTreeSha,
+    parents: [latestCommitSha],
+  };
+  const newCommitRes = await fetch(`${baseUrl}/git/commits`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(newCommitPayload),
+  });
+  if (!newCommitRes.ok) throw new Error('Failed to create git commit');
+  const newCommitData = await newCommitRes.json();
+  const newCommitSha = newCommitData.sha;
+
+  // 6. Update branch ref
+  const updateRefRes = await fetch(`${baseUrl}/git/refs/heads/${branch}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ sha: newCommitSha }),
+  });
+  if (!updateRefRes.ok) throw new Error('Failed to update branch ref');
 }
 
 export async function POST(req: Request) {
@@ -90,6 +123,14 @@ export async function POST(req: Request) {
 
     if (!action || !details) {
       return NextResponse.json({ error: 'Missing action or details' }, { status: 400 });
+    }
+
+    const token = process.env.GITHUB_PAT; 
+    const owner = process.env.GITHUB_USERNAME; 
+    const repo = process.env.GITHUB_TRACKER_REPO;
+
+    if (!token || !owner || !repo) {
+      return NextResponse.json({ error: 'Missing GitHub credentials in environment variables' }, { status: 500 });
     }
 
     const now = new Date();
@@ -101,41 +142,43 @@ export async function POST(req: Request) {
       action === 'mastered' ? `✅ Mastered: ${details}` :
       `🔄 Unmastered: ${details}`;
 
-    // --- Update log.json ---
-    await updateGitHubFile('log.json', (oldContent) => {
-      let log: LogData = { activities: [] };
-      try {
-        if (oldContent) log = JSON.parse(oldContent);
-      } catch { /* ignore parse error */ }
-      
-      log.activities.push({ timestamp, action, details, date });
-      return JSON.stringify(log, null, 2);
-    }, commitMsg);
+    // Fetch existing contents
+    const oldLogContent = await getGitHubFileContent(token, owner, repo, 'log.json');
+    const oldStatsContent = await getGitHubFileContent(token, owner, repo, 'stats.json');
 
-    // --- Update stats.json ---
-    await updateGitHubFile('stats.json', (oldContent) => {
-      let stats: Stats = { totalSaves: 0, totalMastered: 0, totalUnmastered: 0, dailyStats: {} };
-      try {
-        if (oldContent) stats = JSON.parse(oldContent);
-      } catch { /* ignore parse error */ }
+    // Process log.json
+    let log: LogData = { activities: [] };
+    if (oldLogContent) {
+      try { log = JSON.parse(oldLogContent); } catch {}
+    }
+    log.activities.push({ timestamp, action, details, date });
+    const newLogContent = JSON.stringify(log, null, 2);
 
-      if (!stats.dailyStats[date]) {
-        stats.dailyStats[date] = { saves: 0, mastered: 0, unmastered: 0 };
-      }
+    // Process stats.json
+    let stats: Stats = { totalSaves: 0, totalMastered: 0, totalUnmastered: 0, dailyStats: {} };
+    if (oldStatsContent) {
+      try { stats = JSON.parse(oldStatsContent); } catch {}
+    }
+    if (!stats.dailyStats[date]) {
+      stats.dailyStats[date] = { saves: 0, mastered: 0, unmastered: 0 };
+    }
+    if (action === 'save') {
+      stats.totalSaves++;
+      stats.dailyStats[date].saves++;
+    } else if (action === 'mastered') {
+      stats.totalMastered++;
+      stats.dailyStats[date].mastered++;
+    } else if (action === 'unmastered') {
+      stats.totalUnmastered++;
+      stats.dailyStats[date].unmastered++;
+    }
+    const newStatsContent = JSON.stringify(stats, null, 2);
 
-      if (action === 'save') {
-        stats.totalSaves++;
-        stats.dailyStats[date].saves++;
-      } else if (action === 'mastered') {
-        stats.totalMastered++;
-        stats.dailyStats[date].mastered++;
-      } else if (action === 'unmastered') {
-        stats.totalUnmastered++;
-        stats.dailyStats[date].unmastered++;
-      }
-
-      return JSON.stringify(stats, null, 2);
-    }, commitMsg);
+    // Commit both files in a single commit!
+    await commitMultipleFiles(token, owner, repo, commitMsg, [
+      { path: 'log.json', content: newLogContent },
+      { path: 'stats.json', content: newStatsContent }
+    ]);
 
     return NextResponse.json({ success: true, action, details, timestamp });
   } catch (error: any) {
