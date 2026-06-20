@@ -24,6 +24,15 @@ function createMessage(role: 'user' | 'assistant', content: string): Message {
 
 const USER_ID = '00000000-0000-0000-0000-000000000000';
 
+// Fire-and-forget tracker call (logs activity to dsa-forge-tracker repo for GitHub contributions)
+function trackActivity(action: string, details: string) {
+  fetch('/api/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, details }),
+  }).catch(() => { /* silent — tracking is best-effort */ });
+}
+
 // Max messages to send to AI for context (keeps token usage reasonable)
 const MAX_AI_HISTORY = 20;
 
@@ -79,6 +88,7 @@ export default function DSAForge() {
 
   // ── Refs for latest state (solves stale closure bugs & stops re-renders on typing) ──
   const masteredRef = useRef(masteredProblems);
+  const selectedProblemRef = useRef(selectedProblem);
   const codeMapRef = useRef<Record<string, string>>({});
   const userNotesRef = useRef<Record<string, string>>({});
   const approachBoardRef = useRef<Record<string, string>>({});
@@ -89,6 +99,7 @@ export default function DSAForge() {
 
   // Keep state-backed refs in sync
   useEffect(() => { masteredRef.current = masteredProblems; }, [masteredProblems]);
+  useEffect(() => { selectedProblemRef.current = selectedProblem; }, [selectedProblem]);
   useEffect(() => { lastReviewRef.current = lastReviewDate; }, [lastReviewDate]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
 
@@ -137,9 +148,10 @@ export default function DSAForge() {
   }, [selectedProblem, language, view]);
 
   // ── Save (uses refs for always-fresh state, saves to MongoDB) ─────────
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (opts?: { silent?: boolean } | any) => {
+    const isSilent = opts?.silent === true;
     setIsSaving(true);
-    const toastId = toast.loading('Syncing progress with S.H.I.E.L.D. servers...');
+    const toastId = isSilent ? undefined : toast.loading('Syncing progress with S.H.I.E.L.D. servers...');
     
     try {
       const res = await fetch('/api/progress', {
@@ -155,10 +167,17 @@ export default function DSAForge() {
       });
 
       if (!res.ok) throw new Error('Failed to save to MongoDB');
-      toast.success('Mission progress secured in cloud database.', { id: toastId });
+      if (!isSilent) {
+        toast.success('Mission progress secured in cloud database.', { id: toastId });
+        trackActivity('save', selectedProblemRef.current);
+      }
     } catch (error: any) {
       console.error('Save error:', error.message);
-      toast.error('Server sync failed. Check database connection.', { id: toastId });
+      if (!isSilent && toastId) {
+        toast.error('Server sync failed. Check database connection.', { id: toastId });
+      } else {
+        toast.error('Auto-save failed.');
+      }
     } finally {
       setTimeout(() => setIsSaving(false), 500);
     }
@@ -209,29 +228,29 @@ export default function DSAForge() {
 
   // ── Toggle Mastered ─────────────────────────────────
   const handleToggleMastered = useCallback((prob: string) => {
+    const isMastered = masteredRef.current.includes(prob);
+    
+    if (isMastered) {
+      toast.info(`Mission status updated: ${prob} is back on the active list.`);
+      trackActivity('unmastered', prob);
+    } else {
+      toast.success('MISSION MASTERED! Status updated in S.H.I.E.L.D. database.', {
+        description: `You have conquered ${prob}.`,
+        duration: 5000,
+      });
+      trackActivity('mastered', prob);
+    }
+
     setMasteredProblems(prev => {
-      const isMastered = prev.includes(prob);
-      let updated: string[];
-      
-      if (isMastered) {
-        updated = prev.filter(p => p !== prob);
-        toast.info(`Mission status updated: ${prob} is back on the active list.`);
-      } else {
-        updated = [...prev, prob];
-        toast.success('MISSION MASTERED! Status updated in S.H.I.E.L.D. database.', {
-          description: `You have conquered ${prob}.`,
-          duration: 5000,
-        });
-      }
-      
-      return updated;
+      if (prev.includes(prob)) return prev.filter(p => p !== prob);
+      return [...prev, prob];
     });
     
     setLastReviewDate(prev => ({ ...prev, [prob]: new Date().toISOString() }));
     
     // Auto-save — uses refs so it always has the latest state
     // Small delay to let React batch the state updates first
-    setTimeout(() => handleSave(), 50);
+    setTimeout(() => handleSave({ silent: true }), 50);
   }, [handleSave]);
 
   // ── Stop AI Generation ────────────────────────────────
