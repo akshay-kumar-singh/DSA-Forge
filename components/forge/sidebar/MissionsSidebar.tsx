@@ -9,9 +9,11 @@ interface MissionsSidebarProps {
   selectedProblem: string;
   masteredProblems: string[];
   lastReviewDate: Record<string, string>;
+  reviewCount: Record<string, number>;
   onSelectProblem: (p: string) => void;
   onGoHome: () => void;
   onToggleMastered: (p: string) => void;
+  onMarkRevised: (p: string) => void;
   onClose: () => void;
 }
 
@@ -21,9 +23,11 @@ const MissionsSidebar = React.memo(function MissionsSidebar({
   selectedProblem,
   masteredProblems,
   lastReviewDate,
+  reviewCount,
   onSelectProblem,
   onGoHome,
   onToggleMastered,
+  onMarkRevised,
   onClose,
 }: MissionsSidebarProps) {
   return (
@@ -53,11 +57,13 @@ const MissionsSidebar = React.memo(function MissionsSidebar({
         totalProblems={TOTAL_PROBLEMS}
       />
 
-      {/* Spaced repetition — mastered problems due for review */}
+      {/* Spaced repetition — mastered problems due for revision */}
       <SpacedRepetition
         lastReviewDate={lastReviewDate}
+        reviewCount={reviewCount}
         masteredProblems={masteredProblems}
         onSelectProblem={onSelectProblem}
+        onMarkRevised={onMarkRevised}
       />
 
       {/* Problem List */}

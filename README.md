@@ -23,9 +23,10 @@ The AI coach (powered by **Mistral** or **Gemini**) follows the **Forge Protocol
 
 ### 🎖️ Mission Control (NeetCode 150)
 *   **Full problem roadmap** organized by pattern (Arrays & Hashing → Math & Geometry) with difficulty badges.
+*   **Accordion sections**: each pattern collapses/expands with per-section progress (e.g. `4/9`); the section you're working in opens automatically.
 *   **Auto-scroll**: the sidebar automatically scrolls to your current mission — even after a reload, you pick up exactly where you left off.
 *   **Checkbox Mastery**: mark missions as mastered; progress syncs to the cloud automatically.
-*   **Spaced Repetition**: a "Due for Review" card resurfaces your oldest mastered problems so they never fade.
+*   **Spaced Repetition**: a collapsible **Due for Revision** card resurfaces mastered problems on an expanding 7 → 14 → 30-day ladder. Revise the problem, hit ✓ (or confirm the prompt that appears when you save it) and it's rescheduled; the card disappears when nothing is due.
 *   **Ranks**: rise from **INITIATE** to **COMMANDER** as you master more missions.
 
 ### 🧠 Forge Mode (AI Coaching)

@@ -30,4 +30,5 @@ export interface ForgeProgress {
   user_notes: Record<string, string>;
   mastered_problems: string[];
   last_review_date: Record<string, string>;
+  review_count: Record<string, number>;
 }

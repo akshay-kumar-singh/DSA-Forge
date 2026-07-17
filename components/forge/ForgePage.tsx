@@ -15,6 +15,7 @@ interface ForgePageProps {
   selectedProblem: string;
   masteredProblems: string[];
   lastReviewDate: Record<string, string>;
+  reviewCount: Record<string, number>;
   codeMap: Record<string, string>;
   userNotes: Record<string, string>;
   language: Language;
@@ -49,6 +50,7 @@ interface ForgePageProps {
   onSend: (override?: string) => void;
   onStop: () => void;
   onToggleMastered: (prob: string) => void;
+  onMarkRevised: (prob: string) => void;
   onClearChat: () => void;
   onProviderChange: (p: AIProvider) => void;
   onModelChange: (m: string) => void;
@@ -58,7 +60,7 @@ interface ForgePageProps {
 
 export default function ForgePage({
   theme, onToggleTheme,
-  selectedProblem, masteredProblems, lastReviewDate, codeMap, userNotes,
+  selectedProblem, masteredProblems, lastReviewDate, reviewCount, codeMap, userNotes,
   language, editorFontSize, editorFontFamily, output, outputHeight, isSaving, isRunning, showNotes,
   messages, input, isLoading,
   showSettings, selectedProvider, selectedModel,
@@ -66,7 +68,7 @@ export default function ForgePage({
   onSelectProblem, onGoHome,
   onCodeChange, onSave, onRun, onToggleNotes, onOpenSettings, onCloseSettings,
   onLanguageChange, onNoteChange, onOutputClose, onOutputResize, onEditorActivity,
-  onInputChange, onSend, onStop, onToggleMastered, onClearChat,
+  onInputChange, onSend, onStop, onToggleMastered, onMarkRevised, onClearChat,
   onProviderChange, onModelChange, onFontSizeChange, onFontFamilyChange,
 }: ForgePageProps) {
   const [showLeftPanel, setShowLeftPanel] = useState(true);
@@ -101,9 +103,11 @@ export default function ForgePage({
                 selectedProblem={selectedProblem}
                 masteredProblems={masteredProblems}
                 lastReviewDate={lastReviewDate}
+                reviewCount={reviewCount}
                 onSelectProblem={onSelectProblem}
                 onGoHome={onGoHome}
                 onToggleMastered={onToggleMastered}
+                onMarkRevised={onMarkRevised}
                 onClose={handleCloseLeft}
               />
             </Panel>

@@ -6,6 +6,7 @@ import { toast, Toaster } from 'sonner';
 import { buildForgeSystemPrompt } from '@/lib/forge-ai';
 import { runCode as runCodeFn } from '@/lib/code-runner';
 import { getStarterCode, AI_PROVIDERS, DSA_PATTERNS } from '@/lib/problems';
+import { getIntervalDays, isDueForRevision } from '@/lib/revision';
 import LandingPage from '@/components/landing/LandingPage';
 import ForgePage from '@/components/forge/ForgePage';
 import type { Message, Language, AIProvider, View } from '@/lib/types';
@@ -74,6 +75,7 @@ export default function DSAForge() {
   const [selectedProblem, setSelectedProblem] = useState("Training: Custom Sandbox");
   const [masteredProblems, setMasteredProblems] = useState<string[]>([]);
   const [lastReviewDate, setLastReviewDate] = useState<Record<string, string>>({});
+  const [reviewCount, setReviewCount] = useState<Record<string, number>>({});
 
   // ── Editor State ────────────────────────────────────
   const [language, setLanguage] = useState<Language>('javascript');
@@ -102,6 +104,7 @@ export default function DSAForge() {
   const codeMapRef = useRef<Record<string, string>>({});
   const userNotesRef = useRef<Record<string, string>>({});
   const lastReviewRef = useRef(lastReviewDate);
+  const reviewCountRef = useRef(reviewCount);
   const messagesRef = useRef(messages);
   const lastEditorActivity = useRef<number>(Date.now());
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -112,6 +115,7 @@ export default function DSAForge() {
   useEffect(() => { masteredRef.current = masteredProblems; }, [masteredProblems]);
   useEffect(() => { selectedProblemRef.current = selectedProblem; }, [selectedProblem]);
   useEffect(() => { lastReviewRef.current = lastReviewDate; }, [lastReviewDate]);
+  useEffect(() => { reviewCountRef.current = reviewCount; }, [reviewCount]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   // Responsive orientation
@@ -136,6 +140,7 @@ export default function DSAForge() {
           if (data.user_notes)        userNotesRef.current = data.user_notes;
           if (data.mastered_problems) setMasteredProblems(data.mastered_problems);
           if (data.last_review_date)  setLastReviewDate(data.last_review_date);
+          if (data.review_count)      setReviewCount(data.review_count);
           setRenderTick(t => t + 1); // trigger render for the loaded refs
         }
       } catch (error) {
@@ -171,6 +176,7 @@ export default function DSAForge() {
           user_notes: userNotesRef.current,
           mastered_problems: masteredRef.current,
           last_review_date: lastReviewRef.current,
+          review_count: reviewCountRef.current,
         }),
       });
 
@@ -179,6 +185,16 @@ export default function DSAForge() {
       if (!isSilent) {
         toast.success('Mission progress secured in cloud database.', { id: toastId });
         trackActivity('save', selectedProblemRef.current);
+
+        // Revision workflow: an explicit save on a due problem usually means
+        // "I just re-solved it" — offer to log the revision (never automatic).
+        const prob = selectedProblemRef.current;
+        if (isDueForRevision(prob, lastReviewRef.current, reviewCountRef.current, masteredRef.current)) {
+          toast(`"${prob}" is due for revision — finished revising it?`, {
+            action: { label: '✓ Mark revised', onClick: () => markRevisedRef.current(prob) },
+            duration: 12000,
+          });
+        }
       }
     } catch (error: unknown) {
       console.error('Save error:', error instanceof Error ? error.message : error);
@@ -190,6 +206,27 @@ export default function DSAForge() {
       setTimeout(() => setIsSaving(false), 500);
     }
   }, []); // ← No deps needed — reads from refs
+
+  // ── Mark Revised (spaced repetition: 7 → 14 → 30 days) ──
+  const handleMarkRevised = useCallback((prob: string) => {
+    const newCount = (reviewCountRef.current[prob] ?? 0) + 1;
+    reviewCountRef.current = { ...reviewCountRef.current, [prob]: newCount };
+    setReviewCount(reviewCountRef.current);
+
+    const nextReview = { ...lastReviewRef.current, [prob]: new Date().toISOString() };
+    lastReviewRef.current = nextReview;
+    setLastReviewDate(nextReview);
+
+    toast.success(`Revision logged: ${prob}`, {
+      description: `Next review in ${getIntervalDays(newCount)} days. 🎯`,
+    });
+    trackActivity('revised', prob);
+    handleSave({ silent: true });
+  }, [handleSave]);
+
+  // Live reference so the save-toast action always calls the fresh handler
+  const markRevisedRef = useRef(handleMarkRevised);
+  useEffect(() => { markRevisedRef.current = handleMarkRevised; }, [handleMarkRevised]);
 
   // ── Auto-save: flush unsaved edits every minute ─────
   useEffect(() => {
@@ -292,6 +329,12 @@ export default function DSAForge() {
     const nextReview = { ...lastReviewRef.current, [prob]: new Date().toISOString() };
     lastReviewRef.current = nextReview;
     setLastReviewDate(nextReview);
+
+    if (!wasMastered) {
+      // (Re)mastering restarts the revision ladder from the first interval
+      reviewCountRef.current = { ...reviewCountRef.current, [prob]: 0 };
+      setReviewCount(reviewCountRef.current);
+    }
 
     if (wasMastered) {
       toast.info(`Mission status updated: ${prob} is back on the active list.`);
@@ -536,6 +579,7 @@ export default function DSAForge() {
           selectedProblem={selectedProblem}
           masteredProblems={masteredProblems}
           lastReviewDate={lastReviewDate}
+          reviewCount={reviewCount}
           codeMap={codeMapRef.current}
           userNotes={userNotesRef.current}
           language={language}
@@ -570,6 +614,7 @@ export default function DSAForge() {
           onSend={handleSend}
           onStop={handleStop}
           onToggleMastered={handleToggleMastered}
+          onMarkRevised={handleMarkRevised}
           onClearChat={handleClearChat}
           onProviderChange={handleProviderChange}
           onModelChange={setSelectedModel}

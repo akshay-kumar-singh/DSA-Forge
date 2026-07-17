@@ -11,12 +11,14 @@ interface DailyStats {
   saves: number;
   mastered: number;
   unmastered: number;
+  revised?: number;
 }
 
 interface Stats {
   totalSaves: number;
   totalMastered: number;
   totalUnmastered: number;
+  totalRevised?: number;
   dailyStats: Record<string, DailyStats>;
 }
 
@@ -140,6 +142,7 @@ export async function POST(req: Request) {
     const commitMsg =
       action === 'save' ? `📝 Save: ${details}` :
       action === 'mastered' ? `✅ Mastered: ${details}` :
+      action === 'revised' ? `📚 Revised: ${details}` :
       `🔄 Unmastered: ${details}`;
 
     // Fetch existing contents
@@ -160,7 +163,7 @@ export async function POST(req: Request) {
       try { stats = JSON.parse(oldStatsContent); } catch {}
     }
     if (!stats.dailyStats[date]) {
-      stats.dailyStats[date] = { saves: 0, mastered: 0, unmastered: 0 };
+      stats.dailyStats[date] = { saves: 0, mastered: 0, unmastered: 0, revised: 0 };
     }
     if (action === 'save') {
       stats.totalSaves++;
@@ -171,6 +174,9 @@ export async function POST(req: Request) {
     } else if (action === 'unmastered') {
       stats.totalUnmastered++;
       stats.dailyStats[date].unmastered++;
+    } else if (action === 'revised') {
+      stats.totalRevised = (stats.totalRevised || 0) + 1;
+      stats.dailyStats[date].revised = (stats.dailyStats[date].revised || 0) + 1;
     }
     const newStatsContent = JSON.stringify(stats, null, 2);
 

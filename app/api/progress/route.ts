@@ -36,6 +36,7 @@ export async function GET() {
         user_notes: toObject(progress.userNotes),
         mastered_problems: progress.masteredProblems || [],
         last_review_date: toObject(progress.lastReviewDate),
+        review_count: toObject(progress.reviewCount),
       }
     });
   } catch (error: any) {
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
     await connectToDatabase();
     
     const body = await req.json();
-    const { code_map, user_notes, mastered_problems, last_review_date } = body;
+    const { code_map, user_notes, mastered_problems, last_review_date, review_count } = body;
 
     const progress = await Progress.findOneAndUpdate(
       { userId: USER_ID },
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
         userNotes: user_notes || {},
         masteredProblems: mastered_problems || [],
         lastReviewDate: last_review_date || {},
+        reviewCount: review_count || {},
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );

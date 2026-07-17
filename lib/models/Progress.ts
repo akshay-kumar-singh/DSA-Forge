@@ -6,6 +6,7 @@ export interface IProgress extends Document {
   userNotes: Record<string, string>;
   masteredProblems: string[];
   lastReviewDate: Record<string, string>;
+  reviewCount: Record<string, number>;
   updatedAt: Date;
 }
 
@@ -16,6 +17,7 @@ const ProgressSchema: Schema = new Schema(
     userNotes: { type: Map, of: String, default: {} },
     masteredProblems: { type: [String], default: [] },
     lastReviewDate: { type: Map, of: String, default: {} },
+    reviewCount: { type: Map, of: Number, default: {} },
   },
   {
     timestamps: true, // Automatically manages createdAt and updatedAt
