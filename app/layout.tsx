@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Inter, Outfit, JetBrains_Mono, Anonymous_Pro, Fira_Code } from 'next/font/google';
-import { Toaster } from 'sonner';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
@@ -18,11 +17,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable} ${anonymousPro.variable} ${firaCode.variable}`}
     >
-      <body suppressHydrationWarning className="font-sans bg-[#0a0a0f] text-[#e2e8f0]">
+      <body suppressHydrationWarning className="font-sans">
         {children}
-        <Toaster theme="dark" position="top-right" closeButton richColors />
       </body>
     </html>
   );

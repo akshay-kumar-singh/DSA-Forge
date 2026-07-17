@@ -1,4 +1,4 @@
-import { Save, Play, Settings, StickyNote, Loader2, Menu, MessageSquare, Sun, Moon } from 'lucide-react';
+import { Save, Play, Settings, StickyNote, Loader2, Menu, MessageSquare, Sun, Moon, Eye } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { Language } from '@/lib/types';
 
@@ -9,13 +9,14 @@ interface EditorToolbarProps {
   language: Language;
   isSaving: boolean;
   isRunning: boolean;
-  isAiLoading: boolean;
   showNotes: boolean;
+  showApproach: boolean;
   showLeftPanel: boolean;
   showRightPanel: boolean;
   onSave: () => void;
   onRun: () => void;
   onToggleNotes: () => void;
+  onToggleApproach: () => void;
   onOpenSettings: () => void;
   onLanguageChange: (lang: Language) => void;
   onToggleLeftPanel: () => void;
@@ -29,32 +30,33 @@ export default function EditorToolbar({
   language,
   isSaving,
   isRunning,
-  isAiLoading,
   showNotes,
+  showApproach,
   showLeftPanel,
   showRightPanel,
   onSave,
   onRun,
   onToggleNotes,
+  onToggleApproach,
   onOpenSettings,
   onLanguageChange,
   onToggleLeftPanel,
   onToggleRightPanel,
 }: EditorToolbarProps) {
   return (
-    <header className="h-14 border-b border-border-subtle flex items-center justify-between px-4 shrink-0 bg-bg-surface">
+    <header className="h-14 border-b border-border-subtle flex items-center justify-between px-4 shrink-0 bg-bg-surface gap-2">
       {/* Problem name */}
       <div className="flex items-center gap-3 min-w-0">
         {!showLeftPanel && (
           <button
             onClick={onToggleLeftPanel}
-            className="forge-btn w-9 h-9 px-0 flex items-center justify-center border-border-default text-blue-400"
+            className="forge-btn w-9 h-9 px-0 shrink-0 flex items-center justify-center border-border-default text-blue-400"
             title="Open Missions"
           >
             <Menu size={16} />
           </button>
         )}
-        <h2 className="font-black text-sm uppercase tracking-tight text-text-primary truncate max-w-[220px]">
+        <h2 className="font-black text-sm uppercase tracking-tight text-text-primary truncate">
           {problem}
         </h2>
       </div>
@@ -72,11 +74,21 @@ export default function EditorToolbar({
           <span className="hidden xl:inline">{isSaving ? 'Saved' : 'Save'}</span>
         </button>
 
-        {/* Field Notes / TlDraw */}
+        {/* Approach Board — plan before you code */}
+        <button
+          onClick={onToggleApproach}
+          className={clsx('forge-btn h-9', showApproach && 'border-blue-500/60 text-blue-400')}
+          title="Approach Board — plan your strategy, AI reads it"
+        >
+          <Eye size={14} />
+          <span className="hidden xl:inline">Approach</span>
+        </button>
+
+        {/* Field Notes */}
         <button
           onClick={onToggleNotes}
           className={clsx('forge-btn h-9', showNotes && 'border-blue-500/60 text-blue-400')}
-          title="Field Notes & Whiteboard"
+          title="Field Notes"
         >
           <StickyNote size={14} />
           <span className="hidden xl:inline">Notes</span>
@@ -106,32 +118,32 @@ export default function EditorToolbar({
           <option value="cpp">C++</option>
         </select>
 
-        {/* Theme Toggle — bigger icon */}
+        {/* Theme Toggle */}
         <button
           onClick={onToggleTheme}
-          className="forge-btn h-10 w-10 px-0 flex items-center justify-center border-border-default text-text-secondary"
+          className="forge-btn h-9 w-9 px-0 flex items-center justify-center border-border-default text-text-secondary"
           title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
         >
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
-        {/* Settings — bigger icon */}
+        {/* Settings */}
         <button
           onClick={onOpenSettings}
-          className="forge-btn h-10 w-10 px-0 flex items-center justify-center"
+          className="forge-btn h-9 w-9 px-0 flex items-center justify-center"
           title="Settings"
         >
-          <Settings size={20} />
+          <Settings size={16} />
         </button>
 
-        {/* Chat Toggle — bigger icon */}
+        {/* Chat Toggle */}
         {!showRightPanel && (
           <button
             onClick={onToggleRightPanel}
-            className="forge-btn h-10 w-10 px-0 flex items-center justify-center border-border-default text-blue-400"
+            className="forge-btn h-9 w-9 px-0 flex items-center justify-center border-border-default text-blue-400"
             title="Open AI Chat"
           >
-            <MessageSquare size={20} />
+            <MessageSquare size={16} />
           </button>
         )}
       </div>

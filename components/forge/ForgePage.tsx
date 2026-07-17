@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import { GripVertical, Menu, X, Layout, MessageSquare } from 'lucide-react';
+import { GripVertical, GripHorizontal } from 'lucide-react';
+import { clsx } from 'clsx';
 import MissionsSidebar from './sidebar/MissionsSidebar';
 import EditorPanel from './editor/EditorPanel';
 import ChatPanel from './chat/ChatPanel';
@@ -38,7 +39,6 @@ interface ForgePageProps {
   onCodeChange: (code: string) => void;
   onSave: () => void;
   onRun: () => void;
-  onReviewCode: () => void;
   onToggleNotes: () => void;
   onToggleApproach: () => void;
   onOpenSettings: () => void;
@@ -69,7 +69,7 @@ export default function ForgePage({
   showSettings, selectedProvider, selectedModel,
   orientation,
   onSelectProblem, onGoHome,
-  onCodeChange, onSave, onRun, onReviewCode, onToggleNotes, onToggleApproach, onOpenSettings, onCloseSettings,
+  onCodeChange, onSave, onRun, onToggleNotes, onToggleApproach, onOpenSettings, onCloseSettings,
   onLanguageChange, onNoteChange, onApproachChange, onOutputClose, onOutputResize, onEditorActivity,
   onInputChange, onSend, onStop, onToggleMastered, onClearChat,
   onProviderChange, onModelChange, onFontSizeChange, onFontFamilyChange,
@@ -82,17 +82,19 @@ export default function ForgePage({
   const currentCode = codeMap[`${selectedProblem}-${language}`] ?? '';
   const currentNote = userNotes[selectedProblem] ?? '';
   const currentApproach = approachBoard[selectedProblem] ?? '';
-  const isMastered = masteredProblems.includes(selectedProblem);
 
   // Stable toggle callbacks
   const handleToggleLeftPanel = React.useCallback(() => setShowLeftPanel(s => !s), []);
   const handleToggleRightPanel = React.useCallback(() => setShowRightPanel(s => !s), []);
   const handleCloseLeft = React.useCallback(() => setShowLeftPanel(false), []);
   const handleCloseRight = React.useCallback(() => setShowRightPanel(false), []);
-  const handleToggleMasteredCurrent = React.useCallback(
-    () => onToggleMastered(selectedProblem),
-    [onToggleMastered, selectedProblem]
+
+  const isHorizontal = orientation === 'horizontal';
+  const separatorClass = clsx(
+    'forge-resize-handle border-border-subtle shrink-0',
+    isHorizontal ? 'w-1.5 cursor-col-resize border-x' : 'h-1.5 w-full cursor-row-resize border-y'
   );
+  const GripIcon = isHorizontal ? GripVertical : GripHorizontal;
 
   return (
     <div className="h-screen w-full overflow-hidden bg-bg-base">
@@ -101,26 +103,25 @@ export default function ForgePage({
         {/* ── LEFT SIDEBAR: Missions ──────────────────── */}
         {showLeftPanel && (
           <>
-            <Panel defaultSize={25} minSize={20} className="flex">
+            <Panel id="forge-missions" defaultSize="22%" minSize="200px" maxSize="40%" className="min-w-0 min-h-0 overflow-hidden">
               <MissionsSidebar
                 selectedProblem={selectedProblem}
                 masteredProblems={masteredProblems}
                 lastReviewDate={lastReviewDate}
-                codeMap={codeMap}
                 onSelectProblem={onSelectProblem}
                 onGoHome={onGoHome}
                 onToggleMastered={onToggleMastered}
                 onClose={handleCloseLeft}
               />
             </Panel>
-            <PanelResizeHandle className="forge-resize-handle w-2 border-x border-border-subtle cursor-col-resize">
-              <GripVertical size={12} className="text-text-muted" />
+            <PanelResizeHandle id="forge-sep-left" className={separatorClass}>
+              <GripIcon size={12} className="text-text-muted" />
             </PanelResizeHandle>
           </>
         )}
 
         {/* ── CENTER: Code Editor ─────────────────────── */}
-        <Panel defaultSize={showLeftPanel && showRightPanel ? 45 : showLeftPanel || showRightPanel ? 70 : 100} minSize={30}>
+        <Panel id="forge-editor" minSize="30%" className="min-w-0 min-h-0 overflow-hidden">
           <EditorPanel
             theme={theme}
             onToggleTheme={onToggleTheme}
@@ -131,19 +132,21 @@ export default function ForgePage({
             outputHeight={outputHeight}
             isSaving={isSaving}
             isRunning={isRunning}
-            isAiLoading={isLoading}
             showNotes={showNotes}
-            isMastered={isMastered}
+            showApproach={showApproach}
             noteValue={currentNote}
+            approachValue={currentApproach}
             editorFontSize={editorFontSize}
             editorFontFamily={editorFontFamily}
             onCodeChange={onCodeChange}
             onSave={onSave}
             onRun={onRun}
             onToggleNotes={onToggleNotes}
+            onToggleApproach={onToggleApproach}
             onOpenSettings={onOpenSettings}
             onLanguageChange={onLanguageChange}
             onNoteChange={onNoteChange}
+            onApproachChange={onApproachChange}
             onOutputClose={onOutputClose}
             onOutputResize={onOutputResize}
             onEditorActivity={onEditorActivity}
@@ -158,21 +161,19 @@ export default function ForgePage({
         {/* ── RIGHT: Chat Panel ───────────────────────── */}
         {showRightPanel && (
           <>
-            <PanelResizeHandle className="forge-resize-handle w-2 border-x border-border-subtle cursor-col-resize">
-              <GripVertical size={12} className="text-text-muted" />
+            <PanelResizeHandle id="forge-sep-right" className={separatorClass}>
+              <GripIcon size={12} className="text-text-muted" />
             </PanelResizeHandle>
-            <Panel defaultSize={30} minSize={20}>
+            <Panel id="forge-chat" defaultSize="28%" minSize="240px" maxSize="50%" className="min-w-0 min-h-0 overflow-hidden">
               <ChatPanel
                 theme={theme}
                 selectedProblem={selectedProblem}
                 messages={messages}
                 input={input}
                 isLoading={isLoading}
-                masteredProblems={masteredProblems}
                 onInputChange={onInputChange}
                 onSend={onSend}
                 onStop={onStop}
-                onToggleMastered={handleToggleMasteredCurrent}
                 onClearChat={onClearChat}
                 onSelectProblem={onSelectProblem}
                 onClose={handleCloseRight}

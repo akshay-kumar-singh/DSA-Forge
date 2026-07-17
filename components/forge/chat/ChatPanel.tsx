@@ -14,11 +14,9 @@ interface ChatPanelProps {
   messages: Message[];
   input: string;
   isLoading: boolean;
-  masteredProblems: string[];
   onInputChange: (v: string) => void;
   onSend: (override?: string) => void;
   onStop: () => void;
-  onToggleMastered: () => void;
   onClearChat: () => void;
   onSelectProblem: (p: string) => void;
   onClose: () => void;
@@ -30,50 +28,56 @@ const ChatPanel = React.memo(function ChatPanel({
   messages,
   input,
   isLoading,
-  masteredProblems,
   onInputChange,
   onSend,
   onStop,
-  onToggleMastered,
   onClearChat,
   onSelectProblem,
   onClose,
 }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isMastered = masteredProblems.includes(selectedProblem);
   const prereqs = PROBLEM_INFO[selectedProblem]?.prerequisites;
   const isTraining = selectedProblem.startsWith('Training:');
 
-  // Auto-scroll
+  const lastMessage = messages[messages.length - 1];
+  // While waiting for the first streamed token, show the typing indicator;
+  // once assistant text starts arriving, the growing bubble replaces it.
+  const showTypingIndicator = isLoading && lastMessage?.role !== 'assistant';
+
+  // Auto-scroll — but only when the user is already near the bottom,
+  // so reading older messages during streaming isn't hijacked.
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 160;
+    if (nearBottom) {
+      el.scrollTop = el.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const handleQuickAction = (msg: string) => {
     onSend(msg);
   };
 
   return (
-    <div className="flex flex-col h-full forge-panel border-l border-border-subtle bg-bg-surface">
+    <div className="flex flex-col h-full w-full min-w-0 forge-panel border-l border-border-subtle bg-bg-surface">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border-subtle shrink-0 space-y-2 bg-bg-surface">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield size={18} className="text-blue-400" />
-            <div>
-              <div className="text-sm font-black uppercase tracking-widest text-text-primary">
+          <div className="flex items-center gap-2 min-w-0">
+            <Shield size={18} className="text-blue-400 shrink-0" />
+            <div className="min-w-0">
+              <div className="text-sm font-black uppercase tracking-widest text-text-primary truncate">
                 Forge AI
               </div>
-              <div className="text-[9px] text-blue-400/60 uppercase tracking-wider">
+              <div className="text-[9px] text-blue-400/60 uppercase tracking-wider truncate">
                 {isTraining ? 'Training Module Active' : 'Forge Mode • No Solutions'}
               </div>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded hover:bg-bg-card text-text-muted hover:text-text-secondary transition-colors"
+            className="w-7 h-7 shrink-0 flex items-center justify-center rounded hover:bg-bg-card text-text-muted hover:text-text-secondary transition-colors"
             title="Close Panel"
           >
             <X size={14} />
@@ -103,7 +107,7 @@ const ChatPanel = React.memo(function ChatPanel({
       </div>
 
       {/* Messages — uses message.id for stable keys */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <motion.div
@@ -115,14 +119,14 @@ const ChatPanel = React.memo(function ChatPanel({
               <ChatMessage
                 theme={theme}
                 message={msg}
-                isLatest={msg.id === messages[messages.length - 1]?.id}
+                isLatest={msg.id === lastMessage?.id}
               />
             </motion.div>
           ))}
         </AnimatePresence>
 
-        {/* Loading indicator */}
-        {isLoading && (
+        {/* Typing indicator (before first streamed token) */}
+        {showTypingIndicator && (
           <div className="flex gap-3 items-center forge-in">
             <div className="w-8 h-8 rounded-full bg-bg-elevated border border-border-default flex items-center justify-center">
               <Loader2 size={12} className="text-blue-400 animate-spin" />

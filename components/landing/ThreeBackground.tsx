@@ -17,8 +17,14 @@ export default function ThreeBackground({ active = true }: ThreeBackgroundProps)
     const W = window.innerWidth;
     const H = window.innerHeight;
 
-    // ── Renderer ───────────────────────────────────────
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    // ── Renderer (skip decoration entirely if WebGL is unavailable) ──
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    } catch (err) {
+      console.warn('WebGL unavailable — skipping 3D background.', err);
+      return;
+    }
     renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 0);

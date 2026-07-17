@@ -46,7 +46,7 @@ export default function ApproachBoard({ show, problem, value, onChange, onClose 
             <p className="text-[10px] text-blue-400/70 leading-relaxed">
               Write your thinking here <strong className="text-blue-400">before you code</strong>.
               FORGE AI reads this and will comment on your approach direction.
-              Think: What data structure? What pattern? What's the time complexity target?
+              Think: What data structure? What pattern? What&apos;s the time complexity target?
             </p>
           </div>
 

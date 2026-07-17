@@ -1,7 +1,6 @@
 'use client';
 
-import { Send, Square, MessageSquare, Zap, RotateCcw } from 'lucide-react';
-import { clsx } from 'clsx';
+import { Send, Square, MessageSquare, RotateCcw } from 'lucide-react';
 
 interface ChatInputProps {
   value: string;

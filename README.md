@@ -4,43 +4,52 @@
 
 **DSA Forge** is a high-performance training facility built for engineers who want to master problem-solving. This isn't just another LeetCode clone—it's a Socratic AI-powered laboratory designed to forge your mind by removing the "copy-paste" escape hatch.
 
+**Live:** https://dsa-forge-akshay.vercel.app/
+
 ---
 
 ## 🛡️ The Forge Philosophy
 
 Most platforms show you the answer the moment you get stuck. You watch a video, feel like you've learned, and forget it tomorrow. **DSA Forge removes that weakness.**
 
-The AI coach (powered by **Mistral**, Gemini, or Groq) follows the **Forge Protocol**:
+The AI coach (powered by **Mistral** or **Gemini**) follows the **Forge Protocol**:
 1. **No Code Spoilers**: It will *never* give you solution code.
-2. **Socratic Guidance**: It pushes you to think through hints, diagrams, and logic nudges.
+2. **Socratic Guidance**: It pushes you to think through escalating hints, diagrams, and logic nudges.
 3. **Execution-First**: It guides you to a working mental model so *you* can write the code.
 
 ---
 
 ## 🚀 Key Features
 
-### 🛠️ Personal Practice & Custom Sandbox
-*   **Recruiter Mode**: Paste in any external question or interview problem to solve it within the Forge environment.
-*   **Sandbox**: Perfect for practicing custom logic, interview prep, or specific recruiter assignments.
+### 🎖️ Mission Control (NeetCode 150)
+*   **Full problem roadmap** organized by pattern (Arrays & Hashing → Math & Geometry) with difficulty badges.
+*   **Auto-scroll**: the sidebar automatically scrolls to your current mission — even after a reload, you pick up exactly where you left off.
+*   **Checkbox Mastery**: mark missions as mastered; progress syncs to the cloud automatically.
+*   **Spaced Repetition**: a "Due for Review" card resurfaces your oldest mastered problems so they never fade.
+*   **Ranks**: rise from **INITIATE** to **COMMANDER** as you master more missions.
 
 ### 🧠 Forge Mode (AI Coaching)
-*   **Mistral-Powered by Default**: Optimized for high-speed, accurate logic guidance.
-*   **Multi-Model Support**: Switch between Mistral, Gemini, Groq, or OpenRouter.
-*   **Context Aware**: The AI sees your problem description, your current code, and your Approach Board simultaneously.
+*   **Streaming replies** — answers render token-by-token, no long waits.
+*   **Hint escalation ladder** — from a gentle nudge to a full plain-English blueprint, never code.
+*   **Context-aware** — the AI sees the problem, your current code, your Approach Board, and your Field Notes on every message.
+*   **Stuck detection** — idle for 10 minutes and the coach proactively checks in with a hint.
+*   **Mermaid diagrams** — data structures and traversals are drawn, not just described.
 
-### 🧬 Integrated Whiteboard & Field Notes
-*   **Tldraw Whiteboard**: Sketch out tree structures, graph traversals, or pointer logic directly in the sidebar.
-*   **Field Notes**: Per-problem markdown notes for complexity analysis and persistent learnings.
-*   **Mutually Exclusive Logic**: Panels intelligently switch between Notes and Approach to keep your workspace focused.
+### 📝 Approach Board & Field Notes
+*   **Approach Board**: write your plan *before* you code — the AI reads it and critiques your direction.
+*   **Field Notes**: per-problem markdown notes for complexity analysis and learnings.
+*   Both are saved to the cloud with your code.
 
 ### ⚙️ Professional Code Runner
-*   **Multi-Language Support**: Run **Python, Java, C++, and JavaScript** instantly via the integrated Piston API.
-*   **Actionable Feedback**: Real-time results with **Sonner** toast notifications for execution status and sync updates.
+*   **Multi-language**: JavaScript runs instantly in-browser; **Python, Java, and C++** execute remotely via the Judge0 API.
+*   **Auto-test injection**: runs your solution against the problem's example input automatically.
+*   **Monaco editor** with per-language starter code, font settings, Ctrl+S save, and Ctrl+Enter run.
 
-### 🎖️ Mission Control & Progression
-*   **Ranking System**: Rise from **INITIATE** to **COMMANDER** as you master more problems.
-*   **Checkbox Mastery**: Simple, intuitive sidebar checkboxes to mark missions as completed.
-*   **Auto-Save Protocol**: Marking a mission as mastered automatically triggers a secure database sync.
+### 🛠️ Custom Sandbox
+*   Paste any external/interview problem into the **Custom Sandbox** and solve it with full AI coaching.
+
+### 📈 GitHub Activity Tracker (optional)
+*   Saves and mastered events are committed to a tracker repo via the GitHub API — your DSA grind shows up in your contribution graph.
 
 ---
 
@@ -48,16 +57,17 @@ The AI coach (powered by **Mistral**, Gemini, or Groq) follows the **Forge Proto
 
 | Layer | Technology |
 |---|---|
-| **Framework** | Next.js 15 (React 19) |
+| **Framework** | Next.js 15 (React 19, App Router) |
 | **Language** | TypeScript |
-| **Styling** | Vanilla CSS + Tailwind CSS 4.0 |
-| **AI Providers** | Mistral AI (Default), Google Gemini, Groq, OpenRouter |
-| **Persistence** | Supabase (Database) + localStorage fallback |
+| **Styling** | Tailwind CSS 4 + CSS variables (dark/light themes) |
+| **AI Providers** | Mistral (default, server-side) · Google Gemini (client-side) · Groq/OpenRouter (server-side, optional) |
+| **Persistence** | MongoDB (Mongoose) + localStorage for session prefs |
 | **Code Editor** | Monaco Editor |
-| **Code Execution** | Piston API (Remote Runner) |
-| **Whiteboard** | Tldraw |
+| **Code Execution** | In-browser (JS) + Judge0 CE API (Python/Java/C++) |
+| **Diagrams** | Mermaid |
 | **Notifications** | Sonner |
-| **Animation** | Motion |
+| **Animation** | Motion + Three.js landing background |
+| **Layout** | react-resizable-panels |
 | **Icons** | Lucide React |
 
 ---
@@ -66,39 +76,45 @@ The AI coach (powered by **Mistral**, Gemini, or Groq) follows the **Forge Proto
 
 ### Prerequisites
 - Node.js 18+
-- API Keys for your preferred AI providers (Mistral, Gemini, etc.)
-- (Optional) Supabase account for cross-device persistence
+- A MongoDB connection string (e.g. free MongoDB Atlas cluster)
+- An API key for at least one AI provider (Mistral recommended)
 
 ### Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/dsa-forge.git
+cd dsa-forge
 
 # Install dependencies
 npm install
 
-# Set up environment variables (.env.local)
-NEXT_PUBLIC_GEMINI_API_KEY=...
-MISTRAL_API_KEY=...
-GROQ_API_KEY=...
-OPENROUTER_API_KEY=...
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+# Set up environment variables
+cp .env.example .env.local
+# ...then fill in the values (see table below)
 
 # Start the Forge
 npm run dev
 ```
 
----
+### Environment Variables
 
-## 🏛️ UI & Aesthetic
+| Variable | Required | Purpose |
+|---|---|---|
+| `MONGODB_URI` | ✅ | Cloud progress sync (code, notes, mastered list) |
+| `MISTRAL_API_KEY` | ✅* | Default AI coach, used by `/api/chat` |
+| `NEXT_PUBLIC_GEMINI_API_KEY` | ✅* | Gemini provider (called from the browser — restrict the key) |
+| `GROQ_API_KEY` | optional | Groq models via `/api/chat` |
+| `OPENROUTER_API_KEY` | optional | OpenRouter models via `/api/chat` |
+| `GITHUB_PAT` | optional | GitHub activity tracker (`repo` scope) |
+| `GITHUB_USERNAME` | optional | Owner of the tracker repo |
+| `GITHUB_TRACKER_REPO` | optional | Repo name that receives activity commits |
 
-The Forge uses a **S.H.I.E.L.D. Tech Lab** aesthetic:
-*   **Base**: Deep space dark (`#0a0a0f`)
-*   **Primary**: Electric blue accents (`#3b82f6`)
-*   **Highlight**: Success green (`#22c55e`)
-*   **Interactions**: Collapsible sidebars and chat for a "Focused Code" experience.
+\* At least one AI provider key is needed for Forge AI to respond.
+
+### Deploy
+
+Deployed on **Vercel** — push to `Main` and set the same environment variables in the Vercel project settings.
 
 ---
 
@@ -108,10 +124,10 @@ The Forge uses a **S.H.I.E.L.D. Tech Lab** aesthetic:
 |---|---|
 | Problems | Missions |
 | Categories | Divisions |
-| Deploy / Submit | **Run** |
+| Run / Submit | **Run** |
 | Solved | **Mastered** |
 | Notes | Field Notes |
-| Training | Briefing |
+| Learning | Training |
 
 ---
 
