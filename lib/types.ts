@@ -28,7 +28,6 @@ export interface AIProvider {
 export interface ForgeProgress {
   code_map: Record<string, string>;
   user_notes: Record<string, string>;
-  approach_board: Record<string, string>;
   mastered_problems: string[];
   last_review_date: Record<string, string>;
 }

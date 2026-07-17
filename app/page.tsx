@@ -44,7 +44,7 @@ function greetingFor(problem: string): Message {
 // Max messages to send to AI for context (keeps token usage reasonable)
 const MAX_AI_HISTORY = 20;
 
-// Auto-save interval for unsaved edits (code / notes / approach)
+// Auto-save interval for unsaved edits (code / notes)
 const AUTOSAVE_MS = 60_000;
 
 export default function DSAForge() {
@@ -82,7 +82,6 @@ export default function DSAForge() {
   const [isSaving, setIsSaving] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
-  const [showApproach, setShowApproach] = useState(false);
   const [editorFontSize, setEditorFontSize] = useState(14);
   const [editorFontFamily, setEditorFontFamily] = useState('var(--font-mono)');
   const [, setRenderTick] = useState(0); // Trigger re-renders when refs load data
@@ -102,12 +101,11 @@ export default function DSAForge() {
   const selectedProblemRef = useRef(selectedProblem);
   const codeMapRef = useRef<Record<string, string>>({});
   const userNotesRef = useRef<Record<string, string>>({});
-  const approachBoardRef = useRef<Record<string, string>>({});
   const lastReviewRef = useRef(lastReviewDate);
   const messagesRef = useRef(messages);
   const lastEditorActivity = useRef<number>(Date.now());
   const abortControllerRef = useRef<AbortController | null>(null);
-  const dirtyRef = useRef(false);          // unsaved code/notes/approach edits
+  const dirtyRef = useRef(false);          // unsaved code/notes edits
   const hydratedRef = useRef(false);       // true once localStorage prefs are restored
 
   // Keep state-backed refs in sync
@@ -136,7 +134,6 @@ export default function DSAForge() {
         if (data) {
           if (data.code_map)          codeMapRef.current = data.code_map;
           if (data.user_notes)        userNotesRef.current = data.user_notes;
-          if (data.approach_board)    approachBoardRef.current = data.approach_board;
           if (data.mastered_problems) setMasteredProblems(data.mastered_problems);
           if (data.last_review_date)  setLastReviewDate(data.last_review_date);
           setRenderTick(t => t + 1); // trigger render for the loaded refs
@@ -174,7 +171,6 @@ export default function DSAForge() {
           user_notes: userNotesRef.current,
           mastered_problems: masteredRef.current,
           last_review_date: lastReviewRef.current,
-          approach_board: approachBoardRef.current,
         }),
       });
 
@@ -215,7 +211,6 @@ export default function DSAForge() {
     setSelectedProblem(prob);
     setOutput(null);
     setShowNotes(false);
-    setShowApproach(false);
     setMessages([greetingFor(prob)]);
     // Code population is handled by the useEffect above
   }, [handleSave]);
@@ -328,7 +323,6 @@ export default function DSAForge() {
 
     // Always read latest code/notes from refs for fresh context
     const currentCode = codeMapRef.current[`${selectedProblem}-${language}`] ?? getStarterCode(selectedProblem, language);
-    const currentApproach = approachBoardRef.current[selectedProblem] ?? '';
     const currentNotes = userNotesRef.current[selectedProblem] ?? '';
 
     // Don't show stuck-timer internal messages to the user
@@ -348,7 +342,6 @@ export default function DSAForge() {
       selectedProblem,
       language,
       currentCode,
-      currentApproach,
       currentNotes,
     );
 
@@ -493,23 +486,6 @@ export default function DSAForge() {
     }
   }, [selectedProblem]);
 
-  // ── Reset Forge (wipes cloud + local data) ──────────
-  const handleResetForge = useCallback(async () => {
-    const confirmed = window.confirm("CAUTION: This will wipe ALL your cloud data for this mission. Proceed?");
-    if (!confirmed) return;
-
-    try {
-      const res = await fetch('/api/progress', { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to clear data');
-
-      localStorage.clear();
-      toast.info('Neural link severed. Rebooting...');
-      setTimeout(() => window.location.reload(), 1500);
-    } catch {
-      toast.error('Failed to clear cloud data.');
-    }
-  }, []);
-
   // ── Clear Chat (local only — no DB sync needed) ─────
   const handleClearChat = useCallback(() => {
     setMessages([greetingFor(selectedProblemRef.current)]);
@@ -518,13 +494,7 @@ export default function DSAForge() {
 
   // ── Memoized callbacks for toggles ──────────────────
   const handleToggleNotes = useCallback(() => {
-    setShowApproach(false);
     setShowNotes(s => !s);
-  }, []);
-
-  const handleToggleApproach = useCallback(() => {
-    setShowNotes(false);
-    setShowApproach(s => !s);
   }, []);
 
   const handleEditorActivity = useCallback(() => {
@@ -533,12 +503,6 @@ export default function DSAForge() {
 
   const handleNoteChange = useCallback((val: string) => {
     userNotesRef.current[selectedProblem] = val;
-    dirtyRef.current = true;
-    setRenderTick(t => t + 1);
-  }, [selectedProblem]);
-
-  const handleApproachChange = useCallback((val: string) => {
-    approachBoardRef.current[selectedProblem] = val;
     dirtyRef.current = true;
     setRenderTick(t => t + 1);
   }, [selectedProblem]);
@@ -574,7 +538,6 @@ export default function DSAForge() {
           lastReviewDate={lastReviewDate}
           codeMap={codeMapRef.current}
           userNotes={userNotesRef.current}
-          approachBoard={approachBoardRef.current}
           language={language}
           editorFontSize={editorFontSize}
           editorFontFamily={editorFontFamily}
@@ -583,7 +546,6 @@ export default function DSAForge() {
           isSaving={isSaving}
           isRunning={isRunning}
           showNotes={showNotes}
-          showApproach={showApproach}
           messages={messages}
           input={input}
           isLoading={isLoading}
@@ -597,12 +559,10 @@ export default function DSAForge() {
           onSave={handleSave}
           onRun={handleRun}
           onToggleNotes={handleToggleNotes}
-          onToggleApproach={handleToggleApproach}
           onOpenSettings={handleOpenSettings}
           onCloseSettings={handleCloseSettings}
           onLanguageChange={handleLanguageChange}
           onNoteChange={handleNoteChange}
-          onApproachChange={handleApproachChange}
           onOutputClose={handleOutputClose}
           onOutputResize={setOutputHeight}
           onEditorActivity={handleEditorActivity}
@@ -615,7 +575,6 @@ export default function DSAForge() {
           onModelChange={setSelectedModel}
           onFontSizeChange={setEditorFontSize}
           onFontFamilyChange={setEditorFontFamily}
-          onResetForge={handleResetForge}
         />
       )}
     </>

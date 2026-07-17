@@ -48,9 +48,12 @@ export default function FieldNotes({ show, problem, noteValue, onNoteChange, onC
             <textarea
               value={noteValue}
               onChange={(e) => onNoteChange(e.target.value)}
-              placeholder="Write your logic, complexity analysis, key observations..."
+              placeholder="Write your approach, logic, complexity analysis, key observations..."
               className="flex-1 w-full bg-bg-base border border-border-subtle rounded p-3 text-sm font-mono text-text-primary placeholder:text-text-muted resize-none outline-none focus:border-blue-500/40 transition-colors leading-relaxed"
             />
+            <p className="text-[9px] text-text-muted uppercase tracking-wider shrink-0">
+              FORGE AI reads these notes automatically — no need to paste them into chat
+            </p>
           </div>
         </motion.div>
       )}

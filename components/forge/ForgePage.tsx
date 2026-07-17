@@ -17,7 +17,6 @@ interface ForgePageProps {
   lastReviewDate: Record<string, string>;
   codeMap: Record<string, string>;
   userNotes: Record<string, string>;
-  approachBoard: Record<string, string>;
   language: Language;
   editorFontSize: number;
   editorFontFamily: string;
@@ -26,7 +25,6 @@ interface ForgePageProps {
   isSaving: boolean;
   isRunning: boolean;
   showNotes: boolean;
-  showApproach: boolean;
   messages: Message[];
   input: string;
   isLoading: boolean;
@@ -40,12 +38,10 @@ interface ForgePageProps {
   onSave: () => void;
   onRun: () => void;
   onToggleNotes: () => void;
-  onToggleApproach: () => void;
   onOpenSettings: () => void;
   onCloseSettings: () => void;
   onLanguageChange: (lang: Language) => void;
   onNoteChange: (val: string) => void;
-  onApproachChange: (val: string) => void;
   onOutputClose: () => void;
   onOutputResize: (h: number) => void;
   onEditorActivity: () => void;
@@ -58,22 +54,20 @@ interface ForgePageProps {
   onModelChange: (m: string) => void;
   onFontSizeChange: (s: number) => void;
   onFontFamilyChange: (f: string) => void;
-  onResetForge: () => void;
 }
 
 export default function ForgePage({
   theme, onToggleTheme,
-  selectedProblem, masteredProblems, lastReviewDate, codeMap, userNotes, approachBoard,
-  language, editorFontSize, editorFontFamily, output, outputHeight, isSaving, isRunning, showNotes, showApproach,
+  selectedProblem, masteredProblems, lastReviewDate, codeMap, userNotes,
+  language, editorFontSize, editorFontFamily, output, outputHeight, isSaving, isRunning, showNotes,
   messages, input, isLoading,
   showSettings, selectedProvider, selectedModel,
   orientation,
   onSelectProblem, onGoHome,
-  onCodeChange, onSave, onRun, onToggleNotes, onToggleApproach, onOpenSettings, onCloseSettings,
-  onLanguageChange, onNoteChange, onApproachChange, onOutputClose, onOutputResize, onEditorActivity,
+  onCodeChange, onSave, onRun, onToggleNotes, onOpenSettings, onCloseSettings,
+  onLanguageChange, onNoteChange, onOutputClose, onOutputResize, onEditorActivity,
   onInputChange, onSend, onStop, onToggleMastered, onClearChat,
   onProviderChange, onModelChange, onFontSizeChange, onFontFamilyChange,
-  onResetForge,
 }: ForgePageProps) {
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
@@ -81,7 +75,6 @@ export default function ForgePage({
   // Compute derived values directly without useMemo since codeMap is a mutated ref object
   const currentCode = codeMap[`${selectedProblem}-${language}`] ?? '';
   const currentNote = userNotes[selectedProblem] ?? '';
-  const currentApproach = approachBoard[selectedProblem] ?? '';
 
   // Stable toggle callbacks
   const handleToggleLeftPanel = React.useCallback(() => setShowLeftPanel(s => !s), []);
@@ -133,20 +126,16 @@ export default function ForgePage({
             isSaving={isSaving}
             isRunning={isRunning}
             showNotes={showNotes}
-            showApproach={showApproach}
             noteValue={currentNote}
-            approachValue={currentApproach}
             editorFontSize={editorFontSize}
             editorFontFamily={editorFontFamily}
             onCodeChange={onCodeChange}
             onSave={onSave}
             onRun={onRun}
             onToggleNotes={onToggleNotes}
-            onToggleApproach={onToggleApproach}
             onOpenSettings={onOpenSettings}
             onLanguageChange={onLanguageChange}
             onNoteChange={onNoteChange}
-            onApproachChange={onApproachChange}
             onOutputClose={onOutputClose}
             onOutputResize={onOutputResize}
             onEditorActivity={onEditorActivity}
@@ -195,7 +184,6 @@ export default function ForgePage({
         onModelChange={onModelChange}
         onFontSizeChange={onFontSizeChange}
         onFontFamilyChange={onFontFamilyChange}
-        onResetForge={onResetForge}
       />
     </div>
   );

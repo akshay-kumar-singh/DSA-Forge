@@ -4,7 +4,6 @@ export function buildForgeSystemPrompt(
   selectedProblem: string,
   language: string,
   currentCode: string,
-  approachNotes: string,
   fieldNotes: string = '',
 ): string {
   const isTraining = selectedProblem.startsWith('Training:');
@@ -20,12 +19,8 @@ export function buildForgeSystemPrompt(
     ? `\nUSER'S CURRENT CODE (${language}):\n\`\`\`${language}\n${currentCode}\n\`\`\``
     : `\nUSER'S CURRENT CODE: (editor is empty — they haven't started coding yet)`;
 
-  const approachSection = approachNotes?.trim()
-    ? `\nUSER'S APPROACH BOARD (their plan, written before coding):\n${approachNotes}`
-    : '';
-
   const notesSection = fieldNotes?.trim()
-    ? `\nUSER'S FIELD NOTES (their personal notes for this problem):\n${fieldNotes}`
+    ? `\nUSER'S FIELD NOTES (their plan, observations, and learnings for this problem):\n${fieldNotes}`
     : '';
 
   const modeSection = isSandbox
@@ -83,7 +78,7 @@ CURRENT CONTEXT (auto-attached, already visible to you)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Mission: "${selectedProblem}"
 ${problemMeta}
-Language: ${language}${codeSection}${approachSection}${notesSection}
+Language: ${language}${codeSection}${notesSection}
 
 ${modeSection}`;
 }

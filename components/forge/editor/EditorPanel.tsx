@@ -5,7 +5,6 @@ import Editor from '@monaco-editor/react';
 import EditorToolbar from './EditorToolbar';
 import ForgeOutput from './ForgeOutput';
 import FieldNotes from './FieldNotes';
-import ApproachBoard from './ApproachBoard';
 import type { Language } from '@/lib/types';
 
 interface EditorPanelProps {
@@ -19,20 +18,16 @@ interface EditorPanelProps {
   isSaving: boolean;
   isRunning: boolean;
   showNotes: boolean;
-  showApproach: boolean;
   noteValue: string;
-  approachValue: string;
   editorFontSize: number;
   editorFontFamily: string;
   onCodeChange: (code: string) => void;
   onSave: () => void;
   onRun: () => void;
   onToggleNotes: () => void;
-  onToggleApproach: () => void;
   onOpenSettings: () => void;
   onLanguageChange: (lang: Language) => void;
   onNoteChange: (val: string) => void;
-  onApproachChange: (val: string) => void;
   onOutputClose: () => void;
   onOutputResize: (h: number) => void;
   onEditorActivity: () => void;
@@ -53,20 +48,16 @@ const EditorPanel = React.memo(function EditorPanel({
   isSaving,
   isRunning,
   showNotes,
-  showApproach,
   noteValue,
-  approachValue,
   editorFontSize,
   editorFontFamily,
   onCodeChange,
   onSave,
   onRun,
   onToggleNotes,
-  onToggleApproach,
   onOpenSettings,
   onLanguageChange,
   onNoteChange,
-  onApproachChange,
   onOutputClose,
   onOutputResize,
   onEditorActivity,
@@ -156,11 +147,9 @@ const EditorPanel = React.memo(function EditorPanel({
         isSaving={isSaving}
         isRunning={isRunning}
         showNotes={showNotes}
-        showApproach={showApproach}
         onSave={onSave}
         onRun={onRun}
         onToggleNotes={onToggleNotes}
-        onToggleApproach={onToggleApproach}
         onOpenSettings={onOpenSettings}
         onLanguageChange={onLanguageChange}
         showLeftPanel={showLeftPanel}
@@ -190,15 +179,6 @@ const EditorPanel = React.memo(function EditorPanel({
             onResize={onOutputResize}
           />
         )}
-
-        {/* Approach Board overlay — plan before you code */}
-        <ApproachBoard
-          show={showApproach}
-          problem={problem}
-          value={approachValue}
-          onChange={onApproachChange}
-          onClose={onToggleApproach}
-        />
 
         {/* Field Notes overlay */}
         <FieldNotes

@@ -1,4 +1,4 @@
-import { Save, Play, Settings, StickyNote, Loader2, Menu, MessageSquare, Sun, Moon, Eye } from 'lucide-react';
+import { Save, Play, Settings, StickyNote, Loader2, Menu, MessageSquare, Sun, Moon } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { Language } from '@/lib/types';
 
@@ -10,13 +10,11 @@ interface EditorToolbarProps {
   isSaving: boolean;
   isRunning: boolean;
   showNotes: boolean;
-  showApproach: boolean;
   showLeftPanel: boolean;
   showRightPanel: boolean;
   onSave: () => void;
   onRun: () => void;
   onToggleNotes: () => void;
-  onToggleApproach: () => void;
   onOpenSettings: () => void;
   onLanguageChange: (lang: Language) => void;
   onToggleLeftPanel: () => void;
@@ -31,13 +29,11 @@ export default function EditorToolbar({
   isSaving,
   isRunning,
   showNotes,
-  showApproach,
   showLeftPanel,
   showRightPanel,
   onSave,
   onRun,
   onToggleNotes,
-  onToggleApproach,
   onOpenSettings,
   onLanguageChange,
   onToggleLeftPanel,
@@ -74,21 +70,11 @@ export default function EditorToolbar({
           <span className="hidden xl:inline">{isSaving ? 'Saved' : 'Save'}</span>
         </button>
 
-        {/* Approach Board — plan before you code */}
-        <button
-          onClick={onToggleApproach}
-          className={clsx('forge-btn h-9', showApproach && 'border-blue-500/60 text-blue-400')}
-          title="Approach Board — plan your strategy, AI reads it"
-        >
-          <Eye size={14} />
-          <span className="hidden xl:inline">Approach</span>
-        </button>
-
         {/* Field Notes */}
         <button
           onClick={onToggleNotes}
           className={clsx('forge-btn h-9', showNotes && 'border-blue-500/60 text-blue-400')}
-          title="Field Notes"
+          title="Field Notes — your plan & learnings, AI reads them"
         >
           <StickyNote size={14} />
           <span className="hidden xl:inline">Notes</span>

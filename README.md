@@ -31,14 +31,14 @@ The AI coach (powered by **Mistral** or **Gemini**) follows the **Forge Protocol
 ### 🧠 Forge Mode (AI Coaching)
 *   **Streaming replies** — answers render token-by-token, no long waits.
 *   **Hint escalation ladder** — from a gentle nudge to a full plain-English blueprint, never code.
-*   **Context-aware** — the AI sees the problem, your current code, your Approach Board, and your Field Notes on every message.
+*   **Context-aware** — the AI sees the problem, your current code, and your Field Notes on every message.
 *   **Stuck detection** — idle for 10 minutes and the coach proactively checks in with a hint.
 *   **Mermaid diagrams** — data structures and traversals are drawn, not just described.
 
-### 📝 Approach Board & Field Notes
-*   **Approach Board**: write your plan *before* you code — the AI reads it and critiques your direction.
-*   **Field Notes**: per-problem markdown notes for complexity analysis and learnings.
-*   Both are saved to the cloud with your code.
+### 📝 Field Notes
+*   Per-problem notes for your approach, complexity analysis, and learnings — write your plan here before you code.
+*   The AI reads your notes automatically and critiques your direction.
+*   Saved to the cloud with your code.
 
 ### ⚙️ Professional Code Runner
 *   **Multi-language**: JavaScript runs instantly in-browser; **Python, Java, and C++** execute remotely via the Judge0 API.

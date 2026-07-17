@@ -34,7 +34,6 @@ export async function GET() {
       data: {
         code_map: toObject(progress.codeMap),
         user_notes: toObject(progress.userNotes),
-        approach_board: toObject(progress.approachBoard),
         mastered_problems: progress.masteredProblems || [],
         last_review_date: toObject(progress.lastReviewDate),
       }
@@ -50,7 +49,7 @@ export async function POST(req: Request) {
     await connectToDatabase();
     
     const body = await req.json();
-    const { code_map, user_notes, approach_board, mastered_problems, last_review_date } = body;
+    const { code_map, user_notes, mastered_problems, last_review_date } = body;
 
     const progress = await Progress.findOneAndUpdate(
       { userId: USER_ID },
@@ -58,7 +57,6 @@ export async function POST(req: Request) {
         userId: USER_ID,
         codeMap: code_map || {},
         userNotes: user_notes || {},
-        approachBoard: approach_board || {},
         masteredProblems: mastered_problems || [],
         lastReviewDate: last_review_date || {},
       },
@@ -68,18 +66,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, data: progress });
   } catch (error: any) {
     console.error('Error saving progress:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-export async function DELETE() {
-  try {
-    await connectToDatabase();
-    await Progress.deleteOne({ userId: USER_ID });
-    
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error('Error deleting progress:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
