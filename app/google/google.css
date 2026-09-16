@@ -1,0 +1,214 @@
+/* ==========================================================================
+   GOOGLE PREP — scoped design system (.gp)
+   Own tokens so light mode is genuinely light (white cards on a cool ground)
+   and dark mode is genuinely dark. Nothing here touches the Forge's classes.
+   ========================================================================== */
+
+.gp {
+  /* dark (default, matches the Forge's default) */
+  --gp-ground: #0b0f17;
+  --gp-surface: #111827;
+  --gp-surface-2: #172033;
+  --gp-surface-3: #1d2840;
+  --gp-border: #1f2a3d;
+  --gp-border-strong: #2c3a52;
+  --gp-text: #e6eaf2;
+  --gp-text-2: #a3adc2;
+  --gp-text-3: #6b7690;
+  --gp-blue: #8ab4f8;
+  --gp-blue-strong: #4f8cf7;
+  --gp-blue-wash: rgba(138, 180, 248, 0.12);
+  --gp-green: #81c995;
+  --gp-green-wash: rgba(129, 201, 149, 0.12);
+  --gp-red: #f28b82;
+  --gp-red-wash: rgba(242, 139, 130, 0.12);
+  --gp-yellow: #fdd663;
+  --gp-yellow-wash: rgba(253, 214, 99, 0.12);
+  --gp-purple: #c58af9;
+  --gp-purple-wash: rgba(197, 138, 249, 0.12);
+  --gp-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --gp-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --gp-on-primary: #0b1220;
+  --gp-track: #1a2333;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] .gp {
+  --gp-ground: #f4f6fb;
+  --gp-surface: #ffffff;
+  --gp-surface-2: #f7f9fc;
+  --gp-surface-3: #eef2f8;
+  --gp-border: #e3e8f0;
+  --gp-border-strong: #cdd6e3;
+  --gp-text: #111827;
+  --gp-text-2: #4b5563;
+  --gp-text-3: #8a94a6;
+  --gp-blue: #1a73e8;
+  --gp-blue-strong: #1557b0;
+  --gp-blue-wash: #e8f0fe;
+  --gp-green: #188038;
+  --gp-green-wash: #e6f4ea;
+  --gp-red: #d93025;
+  --gp-red-wash: #fce8e6;
+  --gp-yellow: #b06000;
+  --gp-yellow-wash: #fef3d9;
+  --gp-purple: #7627bb;
+  --gp-purple-wash: #f3e8fd;
+  --gp-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.05);
+  --gp-shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.12);
+  --gp-on-primary: #ffffff;
+  --gp-track: #e9edf4;
+  color-scheme: light;
+}
+
+.gp { background: var(--gp-ground); color: var(--gp-text); font-family: var(--font-sans); }
+
+/* ── Text ── */
+.gp-t1 { color: var(--gp-text); }
+.gp-t2 { color: var(--gp-text-2); }
+.gp-t3 { color: var(--gp-text-3); }
+.gp-blue { color: var(--gp-blue); }
+.gp-green { color: var(--gp-green); }
+.gp-red { color: var(--gp-red); }
+.gp-yellow { color: var(--gp-yellow); }
+.gp-purple { color: var(--gp-purple); }
+.gp-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+.gp-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gp-text-3); }
+.gp-h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--gp-text); line-height: 1.2; }
+.gp-h2 { font-family: var(--font-display); font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: var(--gp-text); line-height: 1.25; }
+.gp-num { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+
+/* ── Surfaces ── */
+.gp-card { background: var(--gp-surface); border: 1px solid var(--gp-border); border-radius: 14px; box-shadow: var(--gp-shadow); }
+.gp-card-hover { transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease; }
+.gp-card-hover:hover { border-color: var(--gp-border-strong); box-shadow: var(--gp-shadow-lg); transform: translateY(-1px); }
+.gp-panel { background: var(--gp-surface); border-color: var(--gp-border); }
+.gp-sub { background: var(--gp-surface-2); }
+.gp-inset { background: var(--gp-surface-2); border: 1px solid var(--gp-border); border-radius: 10px; }
+.gp-border { border-color: var(--gp-border); }
+.gp-border-strong { border-color: var(--gp-border-strong); }
+.gp-divide > * + * { border-top: 1px solid var(--gp-border); }
+.gp-accent-card { border-color: color-mix(in srgb, var(--gp-blue) 45%, var(--gp-border)); box-shadow: 0 0 0 3px var(--gp-blue-wash), var(--gp-shadow); }
+
+/* ── Buttons ── */
+.gp-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 36px; padding: 0 14px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; letter-spacing: 0;
+  border: 1px solid var(--gp-border-strong); background: var(--gp-surface); color: var(--gp-text-2);
+  cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+}
+.gp-btn:hover:not(:disabled) { border-color: var(--gp-blue); color: var(--gp-text); background: var(--gp-surface-2); }
+.gp-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.gp-btn-sm { height: 30px; padding: 0 10px; font-size: 12px; border-radius: 8px; }
+.gp-btn-icon { width: 36px; padding: 0; }
+.gp-btn-icon.gp-btn-sm { width: 30px; }
+.gp-btn-primary { background: var(--gp-blue); border-color: var(--gp-blue); color: var(--gp-on-primary); }
+.gp-btn-primary:hover:not(:disabled) { background: var(--gp-blue-strong); border-color: var(--gp-blue-strong); color: var(--gp-on-primary); }
+.gp-btn-danger { border-color: color-mix(in srgb, var(--gp-red) 45%, transparent); color: var(--gp-red); }
+.gp-btn-danger:hover:not(:disabled) { background: var(--gp-red-wash); border-color: var(--gp-red); color: var(--gp-red); }
+.gp-btn-ghost { border-color: transparent; background: transparent; }
+.gp-btn-ghost:hover:not(:disabled) { background: var(--gp-surface-2); border-color: transparent; }
+.gp-btn-active { border-color: var(--gp-blue); color: var(--gp-blue); background: var(--gp-blue-wash); }
+
+/* ── Chips ── */
+.gp-chip { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; background: var(--gp-surface-3); color: var(--gp-text-2); }
+.gp-chip-blue { background: var(--gp-blue-wash); color: var(--gp-blue); }
+.gp-chip-green { background: var(--gp-green-wash); color: var(--gp-green); }
+.gp-chip-red { background: var(--gp-red-wash); color: var(--gp-red); }
+.gp-chip-yellow { background: var(--gp-yellow-wash); color: var(--gp-yellow); }
+.gp-chip-purple { background: var(--gp-purple-wash); color: var(--gp-purple); }
+.gp-chip-xs { height: 18px; padding: 0 6px; font-size: 10px; }
+
+/* ── Tabs (top nav) ── */
+.gp-tab { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--gp-text-2); border: 1px solid transparent; transition: all 0.15s ease; white-space: nowrap; }
+.gp-tab:hover { color: var(--gp-text); background: var(--gp-surface-2); }
+.gp-tab-active { color: var(--gp-blue); background: var(--gp-blue-wash); }
+
+/* ── Inputs ── */
+.gp-input { background: var(--gp-surface); border: 1px solid var(--gp-border-strong); border-radius: 10px; color: var(--gp-text); font-size: 13px; padding: 8px 10px; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.gp-input:focus { border-color: var(--gp-blue); box-shadow: 0 0 0 3px var(--gp-blue-wash); }
+.gp-input::placeholder { color: var(--gp-text-3); }
+.gp-textarea { resize: vertical; line-height: 1.6; }
+.gp-select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--gp-text-3) 50%), linear-gradient(135deg, var(--gp-text-3) 50%, transparent 50%); background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 30px; }
+
+/* ── Checkbox ── */
+.gp-check { appearance: none; width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid var(--gp-border-strong); background: var(--gp-surface); cursor: pointer; flex-shrink: 0; position: relative; transition: all 0.12s ease; }
+.gp-check:hover { border-color: var(--gp-blue); }
+.gp-check:checked { background: var(--gp-blue); border-color: var(--gp-blue); }
+.gp-check:checked::after { content: ''; position: absolute; left: 5px; top: 1.5px; width: 5px; height: 10px; border: solid var(--gp-on-primary); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.gp-check:focus-visible { outline: 2px solid var(--gp-blue); outline-offset: 2px; }
+
+/* ── Progress ── */
+.gp-track { background: var(--gp-track); border-radius: 999px; overflow: hidden; }
+.gp-bar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--gp-blue-strong), var(--gp-blue)); transition: width 0.6s ease; }
+.gp-bar-green { background: linear-gradient(90deg, #1e8e3e, var(--gp-green)); }
+
+/* ── Rows ── */
+.gp-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; border-radius: 10px; transition: background 0.12s ease; }
+.gp-row:hover { background: var(--gp-surface-2); }
+.gp-row-done { opacity: 0.55; }
+.gp-row-done .gp-row-text { text-decoration: line-through; }
+.gp-link { color: var(--gp-blue); font-weight: 600; }
+.gp-link:hover { text-decoration: underline; }
+.gp-pill-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.gp-item { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; background: var(--gp-surface-2); border: 1px solid var(--gp-border); font-size: 12.5px; font-weight: 500; color: var(--gp-text); transition: all 0.12s ease; text-align: left; }
+.gp-item:hover { border-color: var(--gp-blue); background: var(--gp-blue-wash); color: var(--gp-blue); }
+.gp-item-done { opacity: 0.6; text-decoration: line-through; text-decoration-color: var(--gp-text-3); }
+/* A pane re-runs this each time it goes from hidden to shown — a soft cross-tab transition */
+@keyframes gp-pane-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.gp-pane { animation: gp-pane-in 0.18s ease; }
+@media (prefers-reduced-motion: reduce) { .gp-pane { animation: none; } }
+.gp-cov-none { background: var(--gp-track); }
+.gp-cov-part { background: var(--gp-blue); opacity: 0.7; }
+.gp-cov-full { background: var(--gp-green); }
+.gp-cov-cur { outline: 2px solid var(--gp-blue); outline-offset: 1px; }
+.gp-cov-none:hover, .gp-cov-part:hover, .gp-cov-full:hover { opacity: 1; filter: brightness(1.15); }
+
+/* ── Sidebar lists (DSA / design / behavioural) ── */
+.gp-side { background: var(--gp-surface); border-color: var(--gp-border); }
+.gp-side-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--gp-border); }
+.gp-side-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border-radius: 9px; text-align: left; font-size: 13px; font-weight: 500; color: var(--gp-text-2); border: 1px solid transparent; transition: all 0.12s ease; }
+.gp-side-item:hover { background: var(--gp-surface-2); color: var(--gp-text); }
+.gp-side-item-active { background: var(--gp-blue-wash); color: var(--gp-blue); border-color: color-mix(in srgb, var(--gp-blue) 30%, transparent); }
+.gp-side-group { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 6px; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gp-text-3); }
+.gp-side-group:hover { color: var(--gp-text); background: var(--gp-surface-2); }
+
+/* ── Difficulty ── */
+.gp-diff { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; }
+.gp-diff-easy { background: var(--gp-green-wash); color: var(--gp-green); }
+.gp-diff-medium { background: var(--gp-yellow-wash); color: var(--gp-yellow); }
+.gp-diff-hard { background: var(--gp-red-wash); color: var(--gp-red); }
+
+/* ── Phase strip ── */
+.gp-phase { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gp-text-3); border-right: 1px solid var(--gp-border); }
+.gp-phase:last-child { border-right: 0; }
+.gp-phase-active { background: var(--gp-blue-wash); color: var(--gp-blue); }
+.gp-phase-past { color: var(--gp-green); }
+
+/* ── Resize handle ── */
+.gp-handle { background: var(--gp-ground); border-color: var(--gp-border); display: flex; align-items: center; justify-content: center; transition: background 0.15s ease; }
+.gp-handle:hover { background: var(--gp-blue-wash); }
+
+/* ── Prose (chat markdown inside gp) ── */
+.gp .forge-prose { color: var(--gp-text); }
+.gp .forge-prose strong, .gp .forge-prose h1, .gp .forge-prose h2, .gp .forge-prose h3 { color: var(--gp-text); }
+.gp .forge-prose code { background: var(--gp-blue-wash); color: var(--gp-blue); }
+.gp .forge-prose pre { background: var(--gp-surface-2); border-color: var(--gp-border); }
+.gp .forge-prose pre code { color: var(--gp-text); background: transparent; }
+
+/* ── Scroll areas ── */
+.gp ::-webkit-scrollbar-thumb { background: var(--gp-border-strong); }
+
+/* ── Whiteboard (Excalidraw) ── */
+.google-whiteboard .excalidraw { --color-primary: var(--gp-blue); }
+.google-whiteboard .excalidraw.theme--dark { --default-bg-color: #0f1521; }
+
+/* ── Ring ── */
+.gp-ring { transform: rotate(-90deg); }
+.gp-ring-track { stroke: var(--gp-track); }
+.gp-ring-bar { stroke: var(--gp-blue); stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+
+/* Compact inputs for tracker tables */
+.gp-input-sm { padding: 5px 8px; font-size: 12.5px; border-radius: 8px; }
+.gp-select.gp-input-sm { padding-right: 24px; background-position: calc(100% - 12px) 55%, calc(100% - 8px) 55%; }

@@ -72,7 +72,7 @@ export default function ForgePage({
   onProviderChange, onModelChange, onFontSizeChange, onFontFamilyChange,
 }: ForgePageProps) {
   const [showLeftPanel, setShowLeftPanel] = useState(true);
-  const [showRightPanel, setShowRightPanel] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(false); // AI chat opens on demand (toolbar button)
 
   // Compute derived values directly without useMemo since codeMap is a mutated ref object
   const currentCode = codeMap[`${selectedProblem}-${language}`] ?? '';

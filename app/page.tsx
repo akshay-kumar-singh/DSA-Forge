@@ -555,7 +555,20 @@ export default function DSAForge() {
     setSelectedModel(p.models[0]);
   }, []);
 
-  const handleGoHome = useCallback(() => setView('home'), []);
+  // ── Browser Back: Forge → landing page, instead of leaving the site ──
+  // Entering the Forge pushes one history entry; Back pops it and shows the landing view.
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => { if (!e.state?.forge) setView('home'); };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  const handleEnterForge = useCallback(() => {
+    try { window.history.pushState({ forge: true }, ''); } catch { /* history unavailable */ }
+    setView('forge');
+  }, []);
+  const handleGoHome = useCallback(() => {
+    if (window.history.state?.forge) window.history.back(); else setView('home');
+  }, []);
   const handleOpenSettings = useCallback(() => setShowSettings(true), []);
   const handleCloseSettings = useCallback(() => setShowSettings(false), []);
   const handleOutputClose = useCallback(() => setOutput(null), []);
@@ -568,7 +581,7 @@ export default function DSAForge() {
         <LandingPage
           masteredCount={masteredProblems.length}
           totalProblems={TOTAL_PROBLEMS}
-          onEnter={() => setView('forge')}
+          onEnter={handleEnterForge}
           theme={theme}
           onToggleTheme={handleToggleTheme}
         />
