@@ -51,7 +51,7 @@ export default function TaskRow({ task, done, items = [], onToggle, onTab, dense
         {items.length > 0 && !done && (
           <div className="gp-pill-list pl-0.5">
             {items.map((it, i) => it.link ? (
-              <button key={i} onClick={() => go(it.link)} className={clsx('gp-item', it.done && 'gp-item-done')} title={it.sub}>
+              <button key={i} onClick={() => go(it.link)} className={clsx('gp-item', it.done && 'gp-item-done', it.optional && !it.done && 'opacity-70')} title={it.optional ? `Bonus — optional. ${it.sub ?? ''}` : it.sub}>
                 {it.done && <Check size={12} className="gp-green" />}
                 {it.again && <RotateCcw size={11} className="gp-t3" />}
                 <span>{it.label}</span>

@@ -21,13 +21,15 @@ interface Props {
   onDrill?: () => void;
   /** problem → plan day it is scheduled on (from lib/google/plan) */
   schedule?: Map<string, PlanDay>;
+  /** problems that are on the plan only as an optional bonus */
+  bonus?: Set<string>;
   onMarkRevised: (p: string) => void;
   onRandomUnseen: () => void;
   onClose: () => void;
 }
 
 const GoogleSidebar = React.memo(function GoogleSidebar({
-  selectedProblem, mastered, lastReviewDate, reviewCount, focus, onSelect, onToggleMastered, onMarkRevised, onRandomUnseen, onClose, schedule, onDrill,
+  selectedProblem, mastered, lastReviewDate, reviewCount, focus, onSelect, onToggleMastered, onMarkRevised, onRandomUnseen, onClose, schedule, bonus, onDrill,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const selRef = useRef<HTMLDivElement | null>(null);
@@ -124,7 +126,8 @@ const GoogleSidebar = React.memo(function GoogleSidebar({
                         {isSel && (
                           <div className="ml-8 mt-1 mb-1.5 pr-2 space-y-1">
                             {pr.note && <p className="text-[11.5px] gp-t2 leading-snug">{pr.note}</p>}
-                            {schedule?.get(pr.name) && (() => { const d = schedule.get(pr.name)!; return <p className="text-[11px] gp-t3 flex items-center gap-1"><CalendarDays size={10} />Plan: day {d.day + 1} · {fmtDate(d.date)} · W{d.week}</p>; })()}
+                            {schedule?.get(pr.name) && (() => { const d = schedule.get(pr.name)!; return <p className="text-[11px] gp-t3 flex items-center gap-1"><CalendarDays size={10} />Plan: day {d.day + 1} · {fmtDate(d.date)} · W{d.week}{bonus?.has(pr.name) ? ' · bonus' : ''}</p>; })()}
+                            {schedule && !schedule.get(pr.name) && <p className="text-[11px] gp-t3 flex items-center gap-1"><CalendarDays size={10} />Extra — not on the plan.</p>}
                             {slug && <a href={`https://leetcode.com/problems/${slug}/`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11.5px] gp-link">Problem statement on LeetCode <ExternalLink size={10} /></a>}
                           </div>
                         )}

@@ -101,7 +101,7 @@ export default function TodayPage({ store, plan, status, onTab }: Props) {
                 ? <DayCard day={next} title={aheadDays > 1 ? `Next up — you are ${aheadDays - 1} day${aheadDays - 1 === 1 ? '' : 's'} ahead; pull further if you have the energy` : 'Next up — pull ahead if you have the energy'} store={store} onToggle={toggle} onTab={onTab} />
                 : <UpNext day={next} store={store} />
             )}
-            <p className="text-[11.5px] gp-t3 leading-relaxed px-1 flex gap-1.5"><Info size={13} className="shrink-0 mt-0.5" />Every DSA problem is assigned to exactly one plan day — the week&apos;s own pattern first, the overflow in the next maintenance week. Problem tasks tick themselves once every problem under them is mastered; tick the rest by hand. When a whole day is done, Today moves on and the ready date comes forward.</p>
+            <p className="text-[11.5px] gp-t3 leading-relaxed px-1 flex gap-1.5"><Info size={13} className="shrink-0 mt-0.5" />Every pattern week has the same shape: theory Monday, 2 problems a day easy → medium plus an optional bonus, a timed set Saturday, 2 hards Sunday. Every problem in the bank has a day — the week&apos;s core inside that week, the rest as bonuses or in maintenance weeks. Problem tasks tick themselves once the required problems under them are mastered (bonuses never block); revision ticks itself when nothing is due; tick the rest by hand. When a whole day is done, Today moves on and the ready date comes forward.</p>
           </div>
 
           {/* ── Side: context for the day ── */}

@@ -149,6 +149,8 @@ export interface TaskItem {
   done?: boolean;
   /** A re-solve of something already scheduled earlier (never auto-ticked from mastery) */
   again?: boolean;
+  /** A bonus problem: shown on the day, never required to complete it */
+  optional?: boolean;
 }
 
 export interface PlanDay {
