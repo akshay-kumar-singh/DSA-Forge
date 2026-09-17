@@ -19,7 +19,7 @@ import { getGoogleStarterCode } from '@/lib/google/starter';
 import { runGoogleCode } from '@/lib/google/runner';
 import { buildGoogleCoachPrompt, buildCodingInterviewerPrompt, parseGrade, stripGradeBlock } from '@/lib/google/ai';
 import { getIntervalDays, isDueForRevision } from '@/lib/revision';
-import { planFor, problemSchedule } from '@/lib/google/plan';
+import { planFor, problemSchedule, bonusProblems } from '@/lib/google/plan';
 
 export interface MockHandlers {
   problem: string;
@@ -74,6 +74,7 @@ export default function GoogleDSA({ theme, onToggleTheme, store, provider, model
   const language = s.language;
   const codeKey = `${selected}-${language}`;
   const schedule = useMemo(() => problemSchedule(planFor(s.planStart)), [s.planStart]);
+  const bonus = useMemo(() => bonusProblems(planFor(s.planStart)), [s.planStart]);
   if (!s.codeMap[codeKey]) s.codeMap[codeKey] = getGoogleStarterCode(selected, language); // ensure starter (no rerender needed)
   const code = s.codeMap[codeKey];
   const note = s.notes[selected] ?? '';
@@ -224,6 +225,7 @@ export default function GoogleDSA({ theme, onToggleTheme, store, provider, model
                 <GoogleSidebar
                   selectedProblem={selected}
                   schedule={schedule}
+                  bonus={bonus}
                   mastered={s.mastered}
                   lastReviewDate={s.lastReviewDate}
                   reviewCount={s.reviewCount}
