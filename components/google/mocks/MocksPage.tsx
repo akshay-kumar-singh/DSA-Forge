@@ -129,7 +129,7 @@ export default function MocksPage(props: Props) {
             </select>
             <button onClick={startDesign} className="gp-btn gp-btn-primary w-full"><Timer size={14} />Start design mock</button>
           </MockCard>
-          <MockCard hl={highlight === 'behavioural'} icon={<Users size={18} />} tone="purple" title="Googleyness & Leadership" desc="Four questions from the real list, probed like a sceptical interviewer. Your story bank is visible to it.">
+          <MockCard hl={highlight === 'behavioural'} icon={<Users size={18} />} tone="purple" title="Culture & Leadership" desc="Four questions from the real list, probed like a sceptical interviewer. Your story bank is visible to it.">
             <div className="h-[38px] flex items-center text-[12px] gp-t3">4 random questions · 45 min</div>
             <button onClick={startBehavioural} className="gp-btn gp-btn-primary w-full"><Timer size={14} />Start behavioural mock</button>
           </MockCard>

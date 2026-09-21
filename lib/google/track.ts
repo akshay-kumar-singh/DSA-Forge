@@ -1,6 +1,6 @@
 // ======================================================
 // GOOGLE PREP — fire-and-forget GitHub activity events
-// One event = one commit in the tracker repo (google/ folder).
+// One event = one commit in the tracker repo (prep/ folder).
 // Best-effort: a missing tracker or a failed request is silent.
 // ======================================================
 

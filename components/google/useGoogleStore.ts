@@ -48,16 +48,16 @@ export function useGoogleStore(): GoogleStore {
     if (cloudTimer.current) { clearTimeout(cloudTimer.current); cloudTimer.current = null; }
     setIsSaving(true);
     saveLocal(stateRef.current);
-    const id = silent ? undefined : toast.loading('Syncing Google prep…');
+    const id = silent ? undefined : toast.loading('Syncing Interview Prep…');
     try {
       await saveCloud(stateRef.current, opts?.keepalive);
       dirtyRef.current = false;
       setCloudOk(true);
-      if (!silent) toast.success('Google prep saved to the cloud.', { id });
+      if (!silent) toast.success('Interview Prep saved to the cloud.', { id });
     } catch (err) {
       setCloudOk(false);
       if (!silent) toast.error('Cloud sync failed — saved in this browser only.', { id });
-      else console.warn('Google prep cloud save failed:', err instanceof Error ? err.message : err);
+      else console.warn('Interview Prep cloud save failed:', err instanceof Error ? err.message : err);
     } finally {
       setTimeout(() => setIsSaving(false), 400);
     }

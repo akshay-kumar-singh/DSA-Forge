@@ -59,7 +59,7 @@ export default function BehaviouralPage({ theme, store, provider, model, orienta
 
   const questions = useMemo(() => mock?.questions ?? [seed.answers[0]], [mock, seed]);
   const greeting = isMock
-    ? `**Mock Googleyness & Leadership round** — ${questions.length} questions, 45 minutes. Press **Start**, then say "ready".`
+    ? `**Mock Culture & Leadership round** — ${questions.length} questions, 45 minutes. Press **Start**, then say "ready".`
     : `Practice: say "ask me" and I'll ask **"${seed.answers[0]}"** — answer in STAR, two minutes, then I'll probe like a real interviewer.`;
   const chat = useChat(provider, model, greeting);
   const buildSystem = useCallback(() => buildBehaviouralInterviewerPrompt(questions, s.stories, TITLES, isMock ? 'mock' : 'practice'), [questions, s.stories, isMock]);
@@ -91,7 +91,7 @@ export default function BehaviouralPage({ theme, store, provider, model, orienta
 
   const actions: QuickAction[] = isMock
     ? [{ label: 'Ready', msg: "I'm ready — ask the first question." }, { label: 'Next question', msg: "I've finished that answer. Next question, please." }]
-    : [{ label: 'Ask me', icon: MessageCircleQuestion, msg: 'Ask me the question now.' }, { label: 'Probe harder', msg: 'Probe my last answer the way a sceptical Google interviewer would.' }, { label: 'Score it', msg: 'Give me a 1.0–4.0 score for that answer with one sentence on why, and the single change that would raise it most.' }];
+    : [{ label: 'Ask me', icon: MessageCircleQuestion, msg: 'Ask me the question now.' }, { label: 'Probe harder', msg: 'Probe my last answer the way a sceptical interviewer at the company would.' }, { label: 'Score it', msg: 'Give me a 1.0–4.0 score for that answer with one sentence on why, and the single change that would raise it most.' }];
 
   const doneCount = STORY_SEEDS.filter(x => complete(s.stories[x.id])).length;
   const words = [story.situation, story.task, story.action, story.result].join(' ').trim().split(/\s+/).filter(Boolean).length;
@@ -139,7 +139,7 @@ export default function BehaviouralPage({ theme, store, provider, model, orienta
             <header className="h-14 border-b gp-border gp-panel flex items-center gap-2 px-3 shrink-0">
               {!showLeft && !isMock && <button onClick={() => setShowLeft(true)} className="gp-btn gp-btn-sm gp-btn-icon"><Menu size={15} /></button>}
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2"><h2 className="text-[15px] font-bold gp-t1 truncate">{isMock ? 'Googleyness & Leadership' : seed.title}</h2>{isMock && <span className="gp-chip gp-chip-xs gp-chip-red">mock</span>}</div>
+                <div className="flex items-center gap-2"><h2 className="text-[15px] font-bold gp-t1 truncate">{isMock ? 'Culture & Leadership' : seed.title}</h2>{isMock && <span className="gp-chip gp-chip-xs gp-chip-red">mock</span>}</div>
                 <div className="text-[11px] gp-t3 truncate">{isMock ? `${questions.length} questions · 45 minutes` : `Proves: ${seed.attribute}`}</div>
               </div>
               {isMock ? (
@@ -200,7 +200,7 @@ export default function BehaviouralPage({ theme, store, provider, model, orienta
           <>
             <PanelResizeHandle id="b-sep-r" className={sep}><Grip size={12} className="gp-t3" /></PanelResizeHandle>
             <Panel id="b-chat" defaultSize="30%" minSize="240px" maxSize="50%" className="min-w-0 min-h-0 overflow-hidden">
-              <GoogleChatPanel theme={theme} title="Interviewer" subtitle={isMock ? 'Googleyness & Leadership — mock' : 'Practice — one question at a time'} icon={<Users size={16} />}
+              <GoogleChatPanel theme={theme} title="Interviewer" subtitle={isMock ? 'Culture & Leadership — mock' : 'Practice — one question at a time'} icon={<Users size={16} />}
                 messages={chat.messages} input={chat.input} isLoading={chat.isLoading} quickActions={actions}
                 placeholder="Answer here in STAR — Situation, Task, Action, Result…"
                 onInputChange={chat.setInput} onSend={handleSend} onStop={chat.stop}

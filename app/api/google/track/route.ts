@@ -4,7 +4,7 @@ import type { GoogleTrackAction } from '@/lib/google/track';
 
 // ======================================================
 // POST /api/google/track — one commit per event in the tracker
-// repo (google/log.json + google/stats.json), so the Google
+// repo (prep/log.json + prep/stats.json), so the Prep
 // track shows up in the contribution graph exactly like the
 // NeetCode Forge does with log.json / stats.json at the root.
 // ======================================================
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
     let log: { activities: Activity[] } = { activities: [] };
     let stats: Stats = { totals: zero(), dailyStats: {} };
-    const [oldLog, oldStats] = await Promise.all([getFile(creds, 'google/log.json'), getFile(creds, 'google/stats.json')]);
+    const [oldLog, oldStats] = await Promise.all([getFile(creds, 'prep/log.json'), getFile(creds, 'prep/stats.json')]);
     if (oldLog) { try { log = JSON.parse(oldLog); } catch { /* start fresh */ } }
     if (oldStats) { try { stats = JSON.parse(oldStats); } catch { /* start fresh */ } }
     if (!Array.isArray(log.activities)) log.activities = [];
@@ -48,9 +48,9 @@ export async function POST(req: Request) {
     stats.totals[action]++;
     stats.dailyStats[date][action]++;
 
-    await commitFiles(creds, `🎯 Google · ${LABEL[action]}: ${details}`, [
-      { path: 'google/log.json', content: JSON.stringify(log, null, 2) },
-      { path: 'google/stats.json', content: JSON.stringify(stats, null, 2) },
+    await commitFiles(creds, `🎯 Prep · ${LABEL[action]}: ${details}`, [
+      { path: 'prep/log.json', content: JSON.stringify(log, null, 2) },
+      { path: 'prep/stats.json', content: JSON.stringify(stats, null, 2) },
     ]);
     return NextResponse.json({ success: true, action, details, timestamp });
   } catch (error: unknown) {

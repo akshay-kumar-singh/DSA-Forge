@@ -154,18 +154,15 @@ function GoogleCard() {
   const status = !g ? 'Not started' : !g.started ? `Starts in ${g.startsIn} day${g.startsIn === 1 ? '' : 's'}` : g.delta === 0 ? 'On schedule' : `${Math.abs(g.delta)}d ${g.delta > 0 ? 'ahead' : 'behind'}`;
   const statusColor = !g || !g.started ? 'text-blue-400 bg-blue-500/10 border-blue-500/20' : g.delta >= 0 ? 'text-green-400 bg-green-500/10 border-green-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20';
   return (
-    <Link href="/google" className={cardClass}>
+    <Link href="/prep" className={cardClass}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="w-11 h-11 rounded-xl bg-bg-elevated border border-border-default flex items-center justify-center">
-            <span className="grid grid-cols-2 gap-[3px] w-5 h-5" aria-hidden>
-              <span className="rounded-[3px] bg-[#4285F4]" /><span className="rounded-[3px] bg-[#EA4335]" />
-              <span className="rounded-[3px] bg-[#FBBC05]" /><span className="rounded-[3px] bg-[#34A853]" />
-            </span>
+            <Target size={20} className="text-green-400" aria-hidden />
           </span>
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-green-400">Track 02</div>
-            <div className="text-xl font-black uppercase tracking-tight text-text-primary leading-tight">Google Prep</div>
+            <div className="text-xl font-black uppercase tracking-tight text-text-primary leading-tight">Interview Prep</div>
           </div>
         </div>
         <span className={`text-[10px] font-black tracking-widest px-2 py-1 rounded border ${statusColor}`}>{status}</span>
@@ -195,7 +192,7 @@ function GoogleCard() {
       </div>
 
       <div className="mt-5 flex items-center justify-end">
-        <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-green-400">Open Google Prep <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" /></span>
+        <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-green-400">Open Interview Prep <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" /></span>
       </div>
     </Link>
   );

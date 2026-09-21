@@ -14,7 +14,7 @@ import type { Contact, ContactStatus, Application, ApplicationStatus } from '@/l
 import { trackGoogle } from '@/lib/google/track';
 
 export const CONTACT_TARGET = 25;
-const VIA = ['College senior', 'Ex-colleague', 'Open-source maintainer', 'GDG / meetup', 'LinkedIn / X', 'Friend of a friend', 'Recruiter', 'Other'];
+const VIA = ['College senior', 'Ex-colleague', 'Open-source maintainer', 'Dev meetup', 'LinkedIn / X', 'Friend of a friend', 'Recruiter', 'Other'];
 const C_STATUS: { id: ContactStatus; label: string; chip: string }[] = [
   { id: 'mapped', label: 'Mapped', chip: '' },
   { id: 'asked', label: 'Asked', chip: 'gp-chip-blue' },
@@ -84,7 +84,7 @@ export default function OutreachCard({ store, open, onToggle }: Props) {
           </div>
 
           {tab === 'people' ? (
-            s.contacts.length === 0 ? <Empty text="No one mapped yet. Start with college seniors now at Google, ex-colleagues who moved, and maintainers you have sent PRs to." /> : (
+            s.contacts.length === 0 ? <Empty text="No one mapped yet. Start with college seniors now at the company, ex-colleagues who moved, and maintainers you have sent PRs to." /> : (
               <div className="space-y-1.5">
                 {s.contacts.map(c => {
                   const st = C_STATUS.find(x => x.id === c.status)!;

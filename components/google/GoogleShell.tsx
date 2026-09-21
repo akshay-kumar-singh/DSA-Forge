@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
-import { Sun, Moon, Settings, Save, Loader2, CalendarDays, Code2, Network, Users, Timer, ListChecks, ArrowLeft, Cloud, CloudOff } from 'lucide-react';
+import { Sun, Moon, Settings, Save, Loader2, CalendarDays, Code2, Network, Users, Timer, ListChecks, ArrowLeft, Cloud, CloudOff, Target } from 'lucide-react';
 import type { GoogleTab } from '@/lib/google/types';
 import type { PlanStatus } from '@/lib/google/plan';
 
@@ -41,10 +41,10 @@ export default function GoogleShell({ theme, onToggleTheme, tab, onTab, status, 
         </Link>
         <div className="flex items-center gap-2 pl-2 border-l gp-border">
           <GoogleMark />
-          <span className="gp-display text-[15px] font-bold gp-t1 hidden sm:inline">Google Prep</span>
+          <span className="gp-display text-[15px] font-bold gp-t1 hidden sm:inline">Interview Prep</span>
         </div>
 
-        <nav className="flex items-center gap-1 ml-3 overflow-x-auto min-w-0" aria-label="Google prep sections">
+        <nav className="flex items-center gap-1 ml-3 overflow-x-auto min-w-0" aria-label="Interview prep sections">
           {NAV.map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => onTab(id)} className={clsx('gp-tab', tab === id && 'gp-tab-active')} aria-current={tab === id ? 'page' : undefined}>
               <Icon size={14} />
@@ -81,10 +81,5 @@ export default function GoogleShell({ theme, onToggleTheme, tab, onTab, status, 
 }
 
 export function GoogleMark({ size = 16 }: { size?: number }) {
-  return (
-    <span className="grid grid-cols-2 gap-[2px] shrink-0" style={{ width: size, height: size }} aria-hidden>
-      <span className="rounded-[2px] bg-[#4285F4]" /><span className="rounded-[2px] bg-[#EA4335]" />
-      <span className="rounded-[2px] bg-[#FBBC05]" /><span className="rounded-[2px] bg-[#34A853]" />
-    </span>
-  );
+  return <Target size={size} className="gp-blue shrink-0" aria-hidden />;
 }
