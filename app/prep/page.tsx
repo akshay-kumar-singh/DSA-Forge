@@ -7,14 +7,15 @@
 // document (/api/google) and never touches /api/progress.
 // ======================================================
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Toaster } from 'sonner';
 import { AI_PROVIDERS } from '@/lib/problems';
 import type { AIProvider } from '@/lib/types';
-import type { GoogleTab, DeepLink } from '@/lib/google/types';
+import type { GoogleTab, DeepLink, PlanTask, TaskItem } from '@/lib/google/types';
 import './prep.css';
-import { planFor, computePlanStatus } from '@/lib/google/plan';
+import { planFor, computePlanStatus, phaseOf, PLAN_WEEKS } from '@/lib/google/plan';
+import { resolveTaskItems } from '@/lib/google/today';
 import { useGoogleStore } from '@/components/google/useGoogleStore';
 import GoogleShell from '@/components/google/GoogleShell';
 import TodayPage from '@/components/google/plan/TodayPage';
@@ -23,9 +24,20 @@ import GoogleDSA from '@/components/google/dsa/GoogleDSA';
 import DesignPage from '@/components/google/design/DesignPage';
 import BehaviouralPage from '@/components/google/behavioural/BehaviouralPage';
 import MocksPage from '@/components/google/mocks/MocksPage';
+import NotesPage from '@/components/google/notes/NotesPage';
+import GoogleChatPanel, { type QuickAction } from '@/components/google/shared/GoogleChatPanel';
+import { useAssistant, type AssistantConfig } from '@/components/google/shared/useAssistant';
+import { buildGuidePrompt } from '@/lib/google/ai';
+import { Sparkles } from 'lucide-react';
 import ForgeSettings from '@/components/forge/settings/ForgeSettings';
 
-const TABS: GoogleTab[] = ['today', 'dsa', 'design', 'behavioural', 'mocks', 'plan'];
+const TABS: GoogleTab[] = ['today', 'dsa', 'design', 'behavioural', 'mocks', 'plan', 'notes'];
+
+const GUIDE_ACTIONS: QuickAction[] = [
+  { label: 'Explain today', msg: "Explain each of today's tasks: what it means, exactly what I do, and where in the app." },
+  { label: 'What now?', msg: 'Looking at my day, what is the single next thing I should do right now, and how?' },
+  { label: 'This phase', msg: 'What is this phase for, what does its gate mean, and how will I know I have passed it?' },
+];
 
 export interface Focus extends Partial<DeepLink> { n: number }
 
@@ -134,7 +146,7 @@ export default function InterviewPrepPage() {
   // Warm the heavier tabs in the background once the first paint is done, so the
   // first click on DSA / Plan / Mocks is instant. Design (Excalidraw) stays lazy.
   useEffect(() => {
-    const order: GoogleTab[] = ['dsa', 'plan', 'mocks', 'behavioural'];
+    const order: GoogleTab[] = ['dsa', 'plan', 'mocks', 'behavioural', 'notes'];
     const timers: ReturnType<typeof setTimeout>[] = [];
     order.forEach((t, i) => timers.push(setTimeout(() => setVisited(v => (v.has(t) ? v : new Set(v).add(t))), 1200 + i * 700)));
     return () => timers.forEach(clearTimeout);
@@ -152,6 +164,40 @@ export default function InterviewPrepPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const status = useMemo(() => computePlanStatus(plan, store.state), [plan, store.tick]);
 
+  // ── The single assistant. Guide hat here; DSA / Design / Behavioural / Mocks register their own hat. ──
+  const tabRef = useRef(tab); tabRef.current = tab;
+  const statusRef = useRef(status); statusRef.current = status;
+  const planRef = useRef(plan); planRef.current = plan;
+  const buildGuideContext = useCallback(() => {
+    const s = store.state, st = statusRef.current, days = planRef.current;
+    const day = days[Math.min(st.currentDay, days.length - 1)];
+    const week = PLAN_WEEKS[day.week];
+    const ph = phaseOf(day.week);
+    const tasks = day.tasks.map((t, i) => {
+      const items = resolveTaskItems(t, s).map(it => `${it.label}${it.sub ? ` (${it.sub})` : ''}${it.done ? ' ✓' : ''}${it.optional ? ' [bonus]' : ''}`).join('; ');
+      return `${i + 1}. [${t.kind}] ${t.text}${s.planDone[t.id] ? ' — DONE' : ''}${items ? `\n   items: ${items}` : ''}`;
+    }).join('\n');
+    const gate = ph.gate.map((g, i) => `- ${g}${s.planDone[`gate-${ph.id}-${i}`] ? ' ✓' : ''}\n  how: ${ph.gateHelp[i]}`).join('\n');
+    const progress = `DSA mastered: ${s.mastered.length}. Mocks done: ${s.mocks.length}. STAR stories written: ${Object.values(s.stories).filter(x => x && x.situation && x.action && x.result).length}/12. Notebook entries: ${s.notebook.length}.`;
+    return `Open tab: ${tabRef.current}. Plan day ${day.day + 1} of ${st.totalDays} (${st.started ? (st.delta === 0 ? 'on schedule' : `${st.delta > 0 ? '+' : ''}${st.delta} days`) : `starts in ${-st.calendarDay} days`}, ${st.daysLeft} days left). Week ${day.week} — ${week.theme} · Phase ${ph.id} ${ph.title}. ${week.detail}\n${progress}\n\nTODAY'S TASKS\n${tasks}\n\nGATE FOR THIS PHASE\n${gate}`;
+  }, [store]);
+  const guide = useMemo<AssistantConfig>(() => ({
+    scope: 'guide',
+    title: 'Guide',
+    subtitle: 'Ask anything — tasks, the plan, resumes, stories',
+    greeting: "**Guide** — ask me anything: what a task means, what to do next, how a tab works, or paste a resume bullet / STAR draft for review. On DSA I become your coach; on Design, Behavioural and Mocks, your interviewer.",
+    buildSystem: () => buildGuidePrompt(buildGuideContext()),
+    quickActions: GUIDE_ACTIONS,
+    placeholder: 'Ask anything… (Enter to send, Shift+Enter for a new line)',
+    clearable: true,
+  }), [buildGuideContext]);
+  const ai = useAssistant(provider, model, tab, guide);
+  const askAbout = useCallback((task: PlanTask, items: TaskItem[]) => {
+    const list = items.filter(i => i.label).map(i => `- ${i.label}${i.sub ? ` (${i.sub})` : ''}`).join('\n');
+    ai.setOpen(true);
+    ai.send(`Explain this task — what does it mean, exactly what do I do, and where in the app?\n\n**${task.text}**${list ? `\n${list}` : ''}`);
+  }, [ai]);
+
   const common = { theme, store, provider, model, orientation };
 
   return (
@@ -167,33 +213,59 @@ export default function InterviewPrepPage() {
         cloudOk={store.cloudOk}
         onSave={() => store.save()}
         onOpenSettings={() => setShowSettings(true)}
+        assistantOpen={ai.isOpen}
+        assistantTitle={ai.active.title}
+        onToggleAssistant={() => ai.setOpen(o => !o)}
+        assistant={
+          <GoogleChatPanel
+            theme={theme}
+            title={ai.active.title}
+            subtitle={ai.active.subtitle}
+            icon={<Sparkles size={16} />}
+            messages={ai.messages}
+            input={ai.input}
+            isLoading={ai.isLoading}
+            quickActions={ai.active.quickActions}
+            placeholder={ai.active.placeholder}
+            onInputChange={ai.setInput}
+            onSend={t => { const text = t ?? ai.input; if (text.trim()) ai.send(text); }}
+            onStop={ai.stop}
+            onClear={ai.active.clearable === false ? undefined : ai.clear}
+            onClose={() => ai.setOpen(false)}
+          />
+        }
       >
         <div hidden={tab !== 'today'} className="h-full min-h-0 gp-pane">
-          <TodayPage {...common} plan={plan} status={status} onTab={setTab} />
+          <TodayPage {...common} plan={plan} status={status} onTab={setTab} onAsk={askAbout} />
         </div>
         {visited.has('dsa') && (
           <div hidden={tab !== 'dsa'} className="h-full min-h-0 gp-pane">
-            <GoogleDSA {...common} onToggleTheme={toggleTheme} editorFontSize={fontSize} editorFontFamily={fontFamily} onOpenSettings={() => setShowSettings(true)} focus={focusFor('dsa')} planWeek={plan[Math.min(status.currentDay, plan.length - 1)].week} />
+            <GoogleDSA {...common} ai={ai.handles.dsa} onToggleTheme={toggleTheme} editorFontSize={fontSize} editorFontFamily={fontFamily} onOpenSettings={() => setShowSettings(true)} focus={focusFor('dsa')} planWeek={plan[Math.min(status.currentDay, plan.length - 1)].week} />
           </div>
         )}
         {visited.has('design') && (
           <div hidden={tab !== 'design'} className="h-full min-h-0 gp-pane">
-            <DesignPage {...common} focus={focusFor('design')} />
+            <DesignPage {...common} ai={ai.handles.design} focus={focusFor('design')} />
           </div>
         )}
         {visited.has('behavioural') && (
           <div hidden={tab !== 'behavioural'} className="h-full min-h-0 gp-pane">
-            <BehaviouralPage {...common} focus={focusFor('behavioural')} />
+            <BehaviouralPage {...common} ai={ai.handles.behavioural} focus={focusFor('behavioural')} />
           </div>
         )}
         {visited.has('mocks') && (
           <div hidden={tab !== 'mocks'} className="h-full min-h-0 gp-pane">
-            <MocksPage {...common} onToggleTheme={toggleTheme} editorFontSize={fontSize} editorFontFamily={fontFamily} onOpenSettings={() => setShowSettings(true)} focus={focusFor('mocks')} />
+            <MocksPage {...common} ai={ai.handles.mocks} onToggleTheme={toggleTheme} editorFontSize={fontSize} editorFontFamily={fontFamily} onOpenSettings={() => setShowSettings(true)} focus={focusFor('mocks')} />
           </div>
         )}
         {visited.has('plan') && (
           <div hidden={tab !== 'plan'} className="h-full min-h-0 gp-pane">
-            <PlanPage {...common} plan={plan} status={status} onTab={setTab} focus={focusFor('plan')} />
+            <PlanPage {...common} plan={plan} status={status} onTab={setTab} onAsk={askAbout} focus={focusFor('plan')} />
+          </div>
+        )}
+        {visited.has('notes') && (
+          <div hidden={tab !== 'notes'} className="h-full min-h-0 gp-pane">
+            <NotesPage store={store} currentWeek={plan[Math.min(status.currentDay, plan.length - 1)].week} />
           </div>
         )}
       </GoogleShell>

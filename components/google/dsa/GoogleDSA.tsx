@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import { GripVertical, GripHorizontal, Shield, Timer as TimerIcon, Flag, Play, Pause, MessageSquare, Lightbulb, Gauge, HelpCircle, Menu } from 'lucide-react';
+import { GripVertical, GripHorizontal, Timer as TimerIcon, Flag, Play, Pause, MessageSquare, Lightbulb, Gauge, HelpCircle, Menu } from 'lucide-react';
 import { clsx } from 'clsx';
 import { toast } from 'sonner';
 import { trackGoogle } from '@/lib/google/track';
 import EditorPanel from '@/components/forge/editor/EditorPanel';
 import GoogleSidebar, { pickUnseen } from './GoogleSidebar';
 import TriggerDrill from './TriggerDrill';
-import GoogleChatPanel, { type QuickAction } from '../shared/GoogleChatPanel';
-import { useChat } from '../shared/useChat';
+import type { QuickAction } from '../shared/GoogleChatPanel';
+import type { AssistantHandle } from '../shared/useAssistant';
 import { useTimer, fmtClock } from '../shared/useTimer';
 import type { GoogleStore } from '../useGoogleStore';
 import type { AIProvider, Language } from '@/lib/types';
@@ -37,6 +37,8 @@ interface Props {
   editorFontSize: number;
   editorFontFamily: string;
   onOpenSettings: () => void;
+  /** The shared assistant — this tab registers the Coach (or the Interviewer in a mock) */
+  ai: AssistantHandle;
   focus?: { n: number; section?: string; problem?: string; drill?: boolean };
   mock?: MockHandlers;
   /** Current plan week — bounds the pattern-trigger drill to patterns studied so far */
@@ -56,7 +58,7 @@ const MOCK_ACTIONS: QuickAction[] = [
   { label: 'Clarify', icon: HelpCircle, msg: 'Before I start: what are the constraints on input size and values, and can I assume the input fits in memory?' },
 ];
 
-export default function GoogleDSA({ theme, onToggleTheme, store, provider, model, orientation, editorFontSize, editorFontFamily, onOpenSettings, focus, mock, planWeek }: Props) {
+export default function GoogleDSA({ theme, onToggleTheme, store, orientation, editorFontSize, editorFontFamily, onOpenSettings, ai, focus, mock, planWeek }: Props) {
   const s = store.state;
   const isMock = !!mock;
 
@@ -81,30 +83,48 @@ export default function GoogleDSA({ theme, onToggleTheme, store, provider, model
 
   // ── Panels ──
   const [showLeft, setShowLeft] = useState(!isMock);
-  const [showRight, setShowRight] = useState(isMock); // chat opens on demand; a mock round is the interview, so it starts open
   const [showNotes, setShowNotes] = useState(false);
   const [output, setOutput] = useState<string | null>(null);
   const [outputHeight, setOutputHeight] = useState(250);
   const [isRunning, setIsRunning] = useState(false);
   const lastActivity = useRef(Date.now());
 
-  // ── Chat ──
-  const greeting = isMock
-    ? `**Mock coding round** — 45 minutes. I'll state the problem; you drive. Press **Start** when you're ready and say "hi" to begin.`
-    : `**${selected}** — Mission loaded. 🎯 Say the pattern trigger out loud before you code.`;
-  const chat = useChat(provider, model, greeting);
+  // ── The assistant wears the Coach hat here (Interviewer in a mock). Prompt reads live code + notes at send time. ──
   const timer = useTimer();
-
-  const codeRef = useRef(code);
-  codeRef.current = code;
+  const timerMin = useRef(0);
+  useEffect(() => { timerMin.current = timer.minutes; }, [timer.minutes]);
   const buildSystem = useCallback(() => {
     const c = s.codeMap[`${selected}-${language}`] ?? '';
     return isMock
-      ? buildCodingInterviewerPrompt(selected, language, c, timer.minutes)
+      ? buildCodingInterviewerPrompt(selected, language, c, timerMin.current)
       : buildGoogleCoachPrompt(selected, language, c, s.notes[selected] ?? '');
-  }, [s, selected, language, isMock, timer.minutes]);
-
-  const handleSend = useCallback((text?: string) => { const t = text ?? chat.input; if (t.trim()) chat.send(t, buildSystem); }, [chat, buildSystem]);
+  }, [s, selected, language, isMock]);
+  const section = GOOGLE_SECTION_OF[selected];
+  const info = GOOGLE_PROBLEMS[selected];
+  const uid = useId(); // a fresh scope per mock round
+  useEffect(() => {
+    ai.register(isMock ? {
+      scope: `mock:coding:${uid}`,
+      title: 'Interviewer',
+      subtitle: 'Mock coding round — evaluating, not coaching',
+      greeting: `**Mock coding round** — 45 minutes. I'll state the problem; you drive. Press **Start** when you're ready and say "hi" to begin.`,
+      buildSystem,
+      quickActions: MOCK_ACTIONS,
+      placeholder: 'Talk to the interviewer… (Enter to send, Shift+Enter for a new line)',
+      clearable: false,
+    } : {
+      scope: `dsa:${selected}`,
+      title: 'Coach',
+      subtitle: `${section?.title ?? ''}${info ? ` · ${info.difficulty}` : ''} — sees your code and notes`,
+      greeting: `**${selected}** — Mission loaded. 🎯 Say the pattern trigger out loud before you code.`,
+      buildSystem,
+      quickActions: COACH_ACTIONS,
+      placeholder: 'Ask the coach — your code and notes are attached automatically… (Enter to send)',
+      clearable: true,
+    });
+    return () => ai.register(null);
+  }, [ai, isMock, selected, buildSystem, section?.title, info, uid]);
+  useEffect(() => { if (isMock) ai.open(); }, [isMock, ai]); // a mock round IS the conversation
 
   // Deep link to a specific problem (from Today / Plan)
   const [drillOpen, setDrillOpen] = useState(false);
@@ -125,8 +145,7 @@ export default function GoogleDSA({ theme, onToggleTheme, store, provider, model
     setSelected(p);
     setOutput(null);
     setShowNotes(false);
-    chat.reset(`**${p}** — Mission loaded. 🎯 Say the pattern trigger out loud before you code.`);
-  }, [chat]);
+  }, []);
 
   // ── Mastered / revised (same ladder as the Forge: 7 → 14 → 30) ──
   const handleToggleMastered = useCallback((p: string) => {
@@ -186,14 +205,13 @@ export default function GoogleDSA({ theme, onToggleTheme, store, provider, model
     if (!mock) return;
     setGrading(true);
     timer.pause();
-    const full = await chat.send('The interview is over. Please grade me now.', buildSystem);
+    ai.open();
+    const full = await ai.send('The interview is over. Please grade me now.');
     const g = parseGrade(full);
     setGrading(false);
     mock.onEnd({ score: g?.score ?? null, verdict: g?.verdict ?? 'Ungraded', feedback: stripGradeBlock(full), minutes: Math.round(timer.seconds / 60), strengths: g?.strengths, improvements: g?.improvements });
-  }, [mock, chat, buildSystem, timer]);
+  }, [mock, ai, timer]);
 
-  const section = GOOGLE_SECTION_OF[selected];
-  const info = GOOGLE_PROBLEMS[selected];
   const isH = orientation === 'horizontal';
   const sep = clsx('gp-handle shrink-0', isH ? 'w-1.5 cursor-col-resize border-x' : 'h-1.5 w-full cursor-row-resize border-y');
   const Grip = isH ? GripVertical : GripHorizontal;
@@ -268,35 +286,13 @@ export default function GoogleDSA({ theme, onToggleTheme, store, provider, model
               onOutputResize={setOutputHeight}
               onEditorActivity={() => { lastActivity.current = Date.now(); }}
               showLeftPanel={showLeft || isMock}
-              showRightPanel={showRight}
+              showRightPanel
               onToggleLeftPanel={() => setShowLeft(v => !v)}
-              onToggleRightPanel={() => setShowRight(v => !v)}
+              onToggleRightPanel={ai.toggle}
+              minimal
             />
           </Panel>
 
-          {showRight && (
-            <>
-              <PanelResizeHandle id="g-sep-r" className={sep}><Grip size={12} className="gp-t3" /></PanelResizeHandle>
-              <Panel id="g-chat" defaultSize="28%" minSize="240px" maxSize="50%" className="min-w-0 min-h-0 overflow-hidden">
-                <GoogleChatPanel
-                  theme={theme}
-                  title={isMock ? 'Interviewer' : 'Forge AI · Prep'}
-                  subtitle={isMock ? 'Mock coding round — evaluating, not coaching' : `${section?.title ?? ''}${info ? ` · ${info.difficulty}` : ''}`}
-                  icon={<Shield size={18} />}
-                  messages={chat.messages}
-                  input={chat.input}
-                  isLoading={chat.isLoading}
-                  quickActions={isMock ? MOCK_ACTIONS : COACH_ACTIONS}
-                  placeholder={isMock ? 'Talk to the interviewer… (Enter to send, Shift+Enter for a new line)' : 'Ask the coach — your code and notes are attached automatically… (Enter to send)'}
-                  onInputChange={chat.setInput}
-                  onSend={handleSend}
-                  onStop={chat.stop}
-                  onClear={isMock ? undefined : () => chat.reset(`**${selected}** — chat cleared.`)}
-                  onClose={() => setShowRight(false)}
-                />
-              </Panel>
-            </>
-          )}
         </PanelGroup>
       </div>
       {!showLeft && !isMock && (

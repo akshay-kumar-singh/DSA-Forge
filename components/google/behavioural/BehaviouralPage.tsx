@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { GripVertical, GripHorizontal, Users, Play, Pause, RotateCcw, Flag, X, Menu, MessageCircleQuestion, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
-import GoogleChatPanel, { type QuickAction } from '../shared/GoogleChatPanel';
-import { useChat } from '../shared/useChat';
+import type { QuickAction } from '../shared/GoogleChatPanel';
+import type { AssistantHandle } from '../shared/useAssistant';
 import { useTimer, fmtClock } from '../shared/useTimer';
 import type { GoogleStore } from '../useGoogleStore';
 import type { AIProvider } from '@/lib/types';
@@ -26,6 +26,8 @@ interface Props {
   provider: AIProvider;
   model: string;
   orientation: 'horizontal' | 'vertical';
+  /** The shared assistant — this tab registers the Interviewer */
+  ai: AssistantHandle;
   focus?: { n: number; id?: string };
   mock?: BehaviouralMockHandlers;
 }
@@ -39,12 +41,11 @@ const FIELDS: { k: keyof StarStory; hint: string; ph: string; rows: number }[] =
   { k: 'result', hint: 'What changed, by how much, and what you learned. A number if you have one.', ph: 'Mismatches dropped from ~40/day to zero; I added an idempotency key and…', rows: 3 },
 ];
 
-export default function BehaviouralPage({ theme, store, provider, model, orientation, focus, mock }: Props) {
+export default function BehaviouralPage({ store, orientation, ai, focus, mock }: Props) {
   const s = store.state;
   const isMock = !!mock;
   const [storyId, setStoryId] = useState(STORY_SEEDS[0].id);
   const [showLeft, setShowLeft] = useState(!isMock);
-  const [showRight, setShowRight] = useState(isMock); // chat opens on demand; a mock round is the interview, so it starts open
   const [showQs, setShowQs] = useState(false);
   const seed = STORY_SEEDS.find(x => x.id === storyId)!;
   const story = s.stories[storyId] ?? EMPTY;
@@ -58,20 +59,36 @@ export default function BehaviouralPage({ theme, store, provider, model, orienta
   const mockTimer = useTimer();
 
   const questions = useMemo(() => mock?.questions ?? [seed.answers[0]], [mock, seed]);
-  const greeting = isMock
-    ? `**Mock Culture & Leadership round** — ${questions.length} questions, 45 minutes. Press **Start**, then say "ready".`
-    : `Practice: say "ask me" and I'll ask **"${seed.answers[0]}"** — answer in STAR, two minutes, then I'll probe like a real interviewer.`;
-  const chat = useChat(provider, model, greeting);
   const buildSystem = useCallback(() => buildBehaviouralInterviewerPrompt(questions, s.stories, TITLES, isMock ? 'mock' : 'practice'), [questions, s.stories, isMock]);
-  const handleSend = useCallback((text?: string) => { const t = text ?? chat.input; if (t.trim()) chat.send(t, buildSystem); }, [chat, buildSystem]);
+
+  const actions: QuickAction[] = useMemo(() => isMock
+    ? [{ label: 'Ready', msg: "I'm ready — ask the first question." }, { label: 'Next question', msg: "I've finished that answer. Next question, please." }]
+    : [{ label: 'Ask me', icon: MessageCircleQuestion, msg: 'Ask me the question now.' }, { label: 'Probe harder', msg: 'Probe my last answer the way a sceptical interviewer at the company would.' }, { label: 'Score it', msg: 'Give me a 1.0–4.0 score for that answer with one sentence on why, and the single change that would raise it most.' }], [isMock]);
+
+  // ── The assistant wears the Interviewer hat here ──
+  const uid = useId();
+  useEffect(() => {
+    ai.register({
+      scope: isMock ? `mock:behavioural:${uid}` : `behavioural:${seed.id}`,
+      title: 'Interviewer',
+      subtitle: isMock ? 'Culture & Leadership — mock' : `${seed.title} · practice — one question at a time`,
+      greeting: isMock
+        ? `**Mock Culture & Leadership round** — ${questions.length} questions, 45 minutes. Press **Start**, then say "ready".`
+        : `Practice: say "ask me" and I'll ask **"${seed.answers[0]}"** — answer in STAR, two minutes, then I'll probe like a real interviewer.`,
+      buildSystem,
+      quickActions: actions,
+      placeholder: 'Answer here in STAR — Situation, Task, Action, Result…',
+      clearable: !isMock,
+    });
+    return () => ai.register(null);
+  }, [ai, isMock, seed, questions.length, buildSystem, actions, uid]);
+  useEffect(() => { if (isMock) ai.open(); }, [isMock, ai]);
 
   const selectStory = useCallback((id: string) => {
     if (!STORY_SEEDS.some(x => x.id === id)) return;
     setStoryId(id);
     rehearsal.reset();
-    const sd = STORY_SEEDS.find(x => x.id === id)!;
-    chat.reset(`Practice: say "ask me" and I'll ask **"${sd.answers[0]}"**.`);
-  }, [chat, rehearsal]);
+  }, [rehearsal]);
 
   const [prevFocusN, setPrevFocusN] = useState(focus?.n ?? 0);
   if (!isMock && focus && focus.n !== prevFocusN) {
@@ -83,15 +100,12 @@ export default function BehaviouralPage({ theme, store, provider, model, orienta
   const endMock = useCallback(async () => {
     if (!mock) return;
     setGrading(true); mockTimer.pause();
-    const full = await chat.send('The interview is over. Please grade me now.', buildSystem);
+    ai.open();
+    const full = await ai.send('The interview is over. Please grade me now.');
     const g = parseGrade(full);
     setGrading(false);
     mock.onEnd({ score: g?.score ?? null, verdict: g?.verdict ?? 'Ungraded', feedback: stripGradeBlock(full), minutes: Math.round(mockTimer.seconds / 60), strengths: g?.strengths, improvements: g?.improvements });
-  }, [mock, chat, buildSystem, mockTimer]);
-
-  const actions: QuickAction[] = isMock
-    ? [{ label: 'Ready', msg: "I'm ready — ask the first question." }, { label: 'Next question', msg: "I've finished that answer. Next question, please." }]
-    : [{ label: 'Ask me', icon: MessageCircleQuestion, msg: 'Ask me the question now.' }, { label: 'Probe harder', msg: 'Probe my last answer the way a sceptical interviewer at the company would.' }, { label: 'Score it', msg: 'Give me a 1.0–4.0 score for that answer with one sentence on why, and the single change that would raise it most.' }];
+  }, [mock, ai, mockTimer]);
 
   const doneCount = STORY_SEEDS.filter(x => complete(s.stories[x.id])).length;
   const words = [story.situation, story.task, story.action, story.result].join(' ').trim().split(/\s+/).filter(Boolean).length;
@@ -157,7 +171,6 @@ export default function BehaviouralPage({ theme, store, provider, model, orienta
                   <button onClick={rehearsal.reset} className="gp-btn gp-btn-sm gp-btn-icon"><RotateCcw size={14} /></button>
                 </div>
               )}
-              {!showRight && <button onClick={() => setShowRight(true)} className="gp-btn gp-btn-sm gp-btn-icon"><Users size={15} /></button>}
             </header>
 
             <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6">
@@ -165,7 +178,7 @@ export default function BehaviouralPage({ theme, store, provider, model, orienta
                 <div className="max-w-2xl mx-auto space-y-4">
                   <div className="gp-card p-5 space-y-3">
                     <div className="gp-h2">How this round runs</div>
-                    <p className="text-[13.5px] gp-t2 leading-relaxed">Answer in the chat on the right — say it out loud first, then type the beats. The interviewer probes after every answer. Your prepared story bank is visible to it, so it will notice if you wander off your own material.</p>
+                    <p className="text-[13.5px] gp-t2 leading-relaxed">Answer in the assistant panel — say it out loud first, then type the beats. The interviewer probes after every answer. Your prepared story bank is visible to it, so it will notice if you wander off your own material.</p>
                     <ol className="space-y-2">{questions.map((q, i) => <li key={i} className="flex gap-3 text-[13.5px] gp-t1"><span className="gp-chip gp-chip-xs gp-chip-purple shrink-0">{i + 1}</span>{q}</li>)}</ol>
                   </div>
                   <Rules />
@@ -196,18 +209,6 @@ export default function BehaviouralPage({ theme, store, provider, model, orienta
           </div>
         </Panel>
 
-        {showRight && (
-          <>
-            <PanelResizeHandle id="b-sep-r" className={sep}><Grip size={12} className="gp-t3" /></PanelResizeHandle>
-            <Panel id="b-chat" defaultSize="30%" minSize="240px" maxSize="50%" className="min-w-0 min-h-0 overflow-hidden">
-              <GoogleChatPanel theme={theme} title="Interviewer" subtitle={isMock ? 'Culture & Leadership — mock' : 'Practice — one question at a time'} icon={<Users size={16} />}
-                messages={chat.messages} input={chat.input} isLoading={chat.isLoading} quickActions={actions}
-                placeholder="Answer here in STAR — Situation, Task, Action, Result…"
-                onInputChange={chat.setInput} onSend={handleSend} onStop={chat.stop}
-                onClear={isMock ? undefined : () => chat.reset('Chat cleared. Say "ask me" when ready.')} onClose={() => setShowRight(false)} />
-            </Panel>
-          </>
-        )}
       </PanelGroup>
     </div>
   );

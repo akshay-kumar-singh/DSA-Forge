@@ -35,6 +35,8 @@ interface EditorPanelProps {
   showRightPanel: boolean;
   onToggleLeftPanel: () => void;
   onToggleRightPanel: () => void;
+  /** See EditorToolbar */
+  minimal?: boolean;
 }
 
 const EditorPanel = React.memo(function EditorPanel({
@@ -65,6 +67,7 @@ const EditorPanel = React.memo(function EditorPanel({
   showRightPanel,
   onToggleLeftPanel,
   onToggleRightPanel,
+  minimal,
 }: EditorPanelProps) {
   const editorRef = useRef<unknown>(null);
   const onCodeChangeRef = useRef(onCodeChange);
@@ -156,6 +159,7 @@ const EditorPanel = React.memo(function EditorPanel({
         showRightPanel={showRightPanel}
         onToggleLeftPanel={onToggleLeftPanel}
         onToggleRightPanel={onToggleRightPanel}
+        minimal={minimal}
       />
 
       {/* Editor + overlays */}

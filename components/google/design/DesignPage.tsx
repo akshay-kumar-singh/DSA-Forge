@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { motion, AnimatePresence } from 'motion/react';
 import { GripVertical, GripHorizontal, Network, Play, Pause, RotateCcw, FileText, Eye, Flag, X, Server, Layout, Menu, Check, Lightbulb, HelpCircle, CircleDot, Calculator } from 'lucide-react';
@@ -8,8 +8,8 @@ import { clsx } from 'clsx';
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types';
 import Whiteboard from './Whiteboard';
 import EstimationDrill from './EstimationDrill';
-import GoogleChatPanel, { type QuickAction } from '../shared/GoogleChatPanel';
-import { useChat } from '../shared/useChat';
+import type { QuickAction } from '../shared/GoogleChatPanel';
+import type { AssistantHandle } from '../shared/useAssistant';
 import { useTimer, fmtClock } from '../shared/useTimer';
 import type { GoogleStore } from '../useGoogleStore';
 import type { AIProvider } from '@/lib/types';
@@ -31,6 +31,8 @@ interface Props {
   provider: AIProvider;
   model: string;
   orientation: 'horizontal' | 'vertical';
+  /** The shared assistant — this tab registers the Interviewer */
+  ai: AssistantHandle;
   focus?: { n: number; id?: string };
   mock?: DesignMockHandlers;
 }
@@ -74,13 +76,12 @@ const MOCK_ACTIONS: QuickAction[] = [
   { label: 'Clarify', icon: HelpCircle, msg: 'Before I design: what scale should I assume — users, reads and writes per second, and the latency target?' },
 ];
 
-export default function DesignPage({ theme, store, provider, model, orientation, focus, mock }: Props) {
+export default function DesignPage({ theme, store, orientation, ai, focus, mock }: Props) {
   const s = store.state;
   const isMock = !!mock;
   const [promptId, setPromptId] = useState<string>(() => mock?.promptId ?? DESIGN_PROMPTS[0].id);
   const dp = DESIGN_PROMPT_BY_ID[promptId];
   const [showLeft, setShowLeft] = useState(!isMock);
-  const [showRight, setShowRight] = useState(isMock); // chat opens on demand; a mock round is the interview, so it starts open
   const [showDoc, setShowDoc] = useState(false);
   const [showBrief, setShowBrief] = useState(!isMock);
   const [showEstimate, setShowEstimate] = useState(false);
@@ -89,29 +90,41 @@ export default function DesignPage({ theme, store, provider, model, orientation,
   const timer = useTimer();
   const phase = phaseAt(timer.minutes);
 
-  const greeting = isMock
-    ? `**Mock system design round** — 45 minutes. Press **Start**, then say "ready" and I'll give you the prompt.`
-    : `**${dp.title}** loaded. Press **Start** on the timer, then say "ready" — I'll give you the prompt the way an interviewer would. Draw on the whiteboard; I can read it.`;
-  const chat = useChat(provider, model, greeting);
-
+  // ── The assistant wears the Interviewer hat here. The prompt reads the whiteboard, doc and timer at send time. ──
+  const timerMin = useRef(0);
+  useEffect(() => { timerMin.current = timer.minutes; }, [timer.minutes]);
   const currentDiagramText = useCallback(() => {
     const els = apiRef.current?.getSceneElements() ?? (() => { try { return JSON.parse(s.designs[promptId] || '[]'); } catch { return []; } })();
     return diagramToText(els);
   }, [s.designs, promptId]);
-
   const buildSystem = useCallback(
-    () => buildDesignInterviewerPrompt(promptId, timer.minutes, currentDiagramText(), s.designDocs[promptId] ?? '', isMock ? 'mock' : 'practice'),
-    [promptId, timer.minutes, currentDiagramText, s.designDocs, isMock],
+    () => buildDesignInterviewerPrompt(promptId, timerMin.current, currentDiagramText(), s.designDocs[promptId] ?? '', isMock ? 'mock' : 'practice'),
+    [promptId, currentDiagramText, s.designDocs, isMock],
   );
-  const handleSend = useCallback((text?: string) => { const t = text ?? chat.input; if (t.trim()) chat.send(t, buildSystem); }, [chat, buildSystem]);
+  const uid = useId(); // a fresh scope per mock round
+  useEffect(() => {
+    ai.register({
+      scope: isMock ? `mock:design:${uid}` : `design:${promptId}`,
+      title: 'Interviewer',
+      subtitle: isMock ? 'Mock system design — no coaching until the end' : `${dp.title} · practice — reads your whiteboard and doc`,
+      greeting: isMock
+        ? `**Mock system design round** — 45 minutes. Press **Start**, then say "ready" and I'll give you the prompt.`
+        : `**${dp.title}** loaded. Press **Start** on the timer, then say "ready" — I'll give you the prompt the way an interviewer would. Draw on the whiteboard; I can read it.`,
+      buildSystem,
+      quickActions: isMock ? MOCK_ACTIONS : PRACTICE_ACTIONS,
+      placeholder: 'Drive the conversation: state requirements, pin numbers, propose, defend…',
+      clearable: !isMock,
+    });
+    return () => ai.register(null);
+  }, [ai, isMock, promptId, dp.title, buildSystem, uid]);
+  useEffect(() => { if (isMock) ai.open(); }, [isMock, ai]);
 
   const selectPrompt = useCallback((id: string) => {
     if (!DESIGN_PROMPT_BY_ID[id]) return;
     setPromptId(id);
     timer.reset();
     setShowDoc(false);
-    chat.reset(`**${DESIGN_PROMPT_BY_ID[id].title}** loaded. Press **Start**, then say "ready" for the prompt.`);
-  }, [chat, timer]);
+  }, [timer]);
 
   // Deep link from Today / Plan
   const [prevFocusN, setPrevFocusN] = useState(focus?.n ?? 0);
@@ -139,11 +152,12 @@ export default function DesignPage({ theme, store, provider, model, orientation,
   const endMock = useCallback(async () => {
     if (!mock) return;
     setGrading(true); timer.pause();
-    const full = await chat.send('The interview is over. Please grade me now.', buildSystem);
+    ai.open();
+    const full = await ai.send('The interview is over. Please grade me now.');
     const g = parseGrade(full);
     setGrading(false);
     mock.onEnd({ score: g?.score ?? null, verdict: g?.verdict ?? 'Ungraded', feedback: stripGradeBlock(full), minutes: Math.round(timer.seconds / 60), strengths: g?.strengths, improvements: g?.improvements });
-  }, [mock, chat, buildSystem, timer]);
+  }, [mock, ai, timer]);
 
   const isH = orientation === 'horizontal';
   const sep = clsx('gp-handle shrink-0', isH ? 'w-1.5 cursor-col-resize border-x' : 'h-1.5 w-full cursor-row-resize border-y');
@@ -209,7 +223,6 @@ export default function DesignPage({ theme, store, provider, model, orientation,
                 <button onClick={() => setShowDoc(v => !v)} className={clsx('gp-btn gp-btn-sm', showDoc && 'gp-btn-active')} title="Design doc"><FileText size={14} /><span className="hidden xl:inline">Doc</span></button>
                 {isMock && <button onClick={endMock} disabled={grading} className="gp-btn gp-btn-danger gp-btn-sm"><Flag size={13} />{grading ? 'Grading…' : 'End & grade'}</button>}
                 {isMock && <button onClick={mock?.onAbort} className="gp-btn gp-btn-ghost gp-btn-sm gp-t3">Abandon</button>}
-                {!showRight && <button onClick={() => setShowRight(true)} className="gp-btn gp-btn-sm gp-btn-icon" title="Interviewer"><Network size={15} /></button>}
               </div>
             </header>
 
@@ -256,18 +269,6 @@ export default function DesignPage({ theme, store, provider, model, orientation,
           </div>
         </Panel>
 
-        {showRight && (
-          <>
-            <PanelResizeHandle id="d-sep-r" className={sep}><Grip size={12} className="gp-t3" /></PanelResizeHandle>
-            <Panel id="d-chat" defaultSize="28%" minSize="240px" maxSize="50%" className="min-w-0 min-h-0 overflow-hidden">
-              <GoogleChatPanel theme={theme} title="Interviewer" subtitle={isMock ? 'Mock — no coaching until the end' : `Practice · ${phase.label}`} icon={<Network size={16} />}
-                messages={chat.messages} input={chat.input} isLoading={chat.isLoading} quickActions={isMock ? MOCK_ACTIONS : PRACTICE_ACTIONS}
-                placeholder="Drive the conversation: state requirements, pin numbers, propose, defend…"
-                onInputChange={chat.setInput} onSend={handleSend} onStop={chat.stop}
-                onClear={isMock ? undefined : () => chat.reset(`**${dp.title}** — chat cleared. Say "ready" for the prompt.`)} onClose={() => setShowRight(false)} />
-            </Panel>
-          </>
-        )}
       </PanelGroup>
       {showEstimate && <EstimationDrill onClose={() => setShowEstimate(false)} />}
     </div>

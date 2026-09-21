@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import { ChevronDown, ChevronRight, LocateFixed, Flag, Check, Info } from 'lucide-react';
 import StatusCard from '../shared/StatusCard';
-import TaskRow, { type OnTab } from './TaskRow';
+import TaskRow, { type OnTab, type OnAsk } from './TaskRow';
 import { GATE_EXPLAINER } from './TodayPage';
 import type { GoogleStore } from '../useGoogleStore';
 import type { AIProvider } from '@/lib/types';
@@ -23,10 +23,11 @@ interface Props {
   plan: PlanDay[];
   status: PlanStatus;
   onTab: OnTab;
+  onAsk?: OnAsk;
   focus?: { n: number; id?: string };
 }
 
-export default function PlanPage({ store, plan, status, onTab, focus }: Props) {
+export default function PlanPage({ store, plan, status, onTab, onAsk, focus }: Props) {
   const s = store.state;
   const toggle = usePlanToggle(store, plan);
   const curWeek = plan[Math.min(status.currentDay, plan.length - 1)].week;
@@ -149,7 +150,7 @@ export default function PlanPage({ store, plan, status, onTab, focus }: Props) {
                               </button>
                               {dOpen && (
                                 <div className="gp-divide px-1 pb-1">
-                                  {d.tasks.map(t => <TaskRow key={t.id} task={t} done={!!s.planDone[t.id]} items={resolveTaskItems(t, s)} onToggle={() => toggle(t.id)} onTab={onTab} dense />)}
+                                  {d.tasks.map(t => <TaskRow key={t.id} task={t} done={!!s.planDone[t.id]} items={resolveTaskItems(t, s)} onToggle={() => toggle(t.id)} onTab={onTab} onAsk={onAsk} dense />)}
                                 </div>
                               )}
                             </div>

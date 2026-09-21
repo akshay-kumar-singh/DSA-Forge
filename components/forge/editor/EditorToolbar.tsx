@@ -19,6 +19,8 @@ interface EditorToolbarProps {
   onLanguageChange: (lang: Language) => void;
   onToggleLeftPanel: () => void;
   onToggleRightPanel: () => void;
+  /** Prep track: theme, settings and chat already live in its own header — keep only Save / Notes / Run / language here */
+  minimal?: boolean;
 }
 
 export default function EditorToolbar({
@@ -38,6 +40,7 @@ export default function EditorToolbar({
   onLanguageChange,
   onToggleLeftPanel,
   onToggleRightPanel,
+  minimal = false,
 }: EditorToolbarProps) {
   return (
     <header className="h-14 border-b border-border-subtle flex items-center justify-between px-4 shrink-0 bg-bg-surface gap-2">
@@ -105,25 +108,25 @@ export default function EditorToolbar({
         </select>
 
         {/* Theme Toggle */}
-        <button
+        {!minimal && <button
           onClick={onToggleTheme}
           className="forge-btn h-9 w-9 px-0 flex items-center justify-center border-border-default text-text-secondary"
           title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
+        </button>}
 
         {/* Settings */}
-        <button
+        {!minimal && <button
           onClick={onOpenSettings}
           className="forge-btn h-9 w-9 px-0 flex items-center justify-center"
           title="Settings"
         >
           <Settings size={16} />
-        </button>
+        </button>}
 
         {/* Chat Toggle */}
-        {!showRightPanel && (
+        {!minimal && !showRightPanel && (
           <button
             onClick={onToggleRightPanel}
             className="forge-btn h-9 w-9 px-0 flex items-center justify-center border-border-default text-blue-400"

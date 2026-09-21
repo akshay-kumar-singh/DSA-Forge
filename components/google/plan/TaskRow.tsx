@@ -1,7 +1,7 @@
 'use client';
 
 import { clsx } from 'clsx';
-import { ArrowUpRight, Check, RotateCcw } from 'lucide-react';
+import { ArrowUpRight, Check, RotateCcw, MessageCircleQuestion } from 'lucide-react';
 import type { PlanTask, TaskItem, DeepLink, GoogleTab } from '@/lib/google/types';
 
 export const KIND: Record<PlanTask['kind'], { label: string; chip: string }> = {
@@ -22,6 +22,7 @@ export const KIND: Record<PlanTask['kind'], { label: string; chip: string }> = {
 };
 
 export type OnTab = (t: GoogleTab, link?: Omit<DeepLink, 'tab'>) => void;
+export type OnAsk = (task: PlanTask, items: TaskItem[]) => void;
 
 interface Props {
   task: PlanTask;
@@ -29,10 +30,12 @@ interface Props {
   items?: TaskItem[];
   onToggle: () => void;
   onTab?: OnTab;
+  /** "?" — send this task to the assistant: what does it mean, what do I do */
+  onAsk?: OnAsk;
   dense?: boolean;
 }
 
-export default function TaskRow({ task, done, items = [], onToggle, onTab, dense }: Props) {
+export default function TaskRow({ task, done, items = [], onToggle, onTab, onAsk, dense }: Props) {
   const k = KIND[task.kind];
   const go = (l?: DeepLink) => { if (l && onTab) { const { tab, ...rest } = l; onTab(tab, rest); } };
   return (
@@ -42,11 +45,18 @@ export default function TaskRow({ task, done, items = [], onToggle, onTab, dense
         <div className="flex items-start gap-2">
           <span className={clsx('gp-chip gp-chip-xs shrink-0 mt-0.5', k.chip)}>{k.label}</span>
           <span className="gp-row-text text-[13.5px] gp-t1 leading-snug">{task.text}</span>
-          {task.link && onTab && (
-            <button onClick={() => go(task.link)} className="ml-auto shrink-0 gp-t3 hover:gp-blue transition-colors" title={`Open ${task.link.tab}`}>
-              <ArrowUpRight size={14} />
-            </button>
-          )}
+          <span className="ml-auto shrink-0 flex items-center gap-1">
+            {onAsk && (
+              <button onClick={() => onAsk(task, items)} className="gp-t3 hover:gp-blue transition-colors" title="Ask the assistant: what does this mean and what exactly do I do?">
+                <MessageCircleQuestion size={14} />
+              </button>
+            )}
+            {task.link && onTab && (
+              <button onClick={() => go(task.link)} className="gp-t3 hover:gp-blue transition-colors" title={`Open ${task.link.tab}`}>
+                <ArrowUpRight size={14} />
+              </button>
+            )}
+          </span>
         </div>
         {items.length > 0 && !done && (
           <div className="gp-pill-list pl-0.5">

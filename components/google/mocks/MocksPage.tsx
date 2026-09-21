@@ -12,6 +12,7 @@ import type { GoogleStore } from '../useGoogleStore';
 import type { AIProvider } from '@/lib/types';
 import type { MockKind, MockResult } from '@/lib/google/types';
 import { GOOGLE_SECTIONS, GOOGLE_PROBLEMS } from '@/lib/google/problems';
+import type { AssistantHandle } from '../shared/useAssistant';
 import { DESIGN_PROMPTS } from '@/lib/google/system-design';
 import { GL_QUESTIONS } from '@/lib/google/behavioural';
 import { trackGoogle } from '@/lib/google/track';
@@ -26,6 +27,8 @@ interface Props {
   editorFontSize: number;
   editorFontFamily: string;
   onOpenSettings: () => void;
+  /** The shared assistant — the running round registers the Interviewer on it */
+  ai: AssistantHandle;
   focus?: { n: number; kind?: MockKind; problem?: string };
 }
 
@@ -41,7 +44,7 @@ const BANDS = [
 const band = (score: number | null) => score == null ? { label: 'Ungraded', chip: '', text: 'gp-t3' } : BANDS.find(b => score >= b.min)!;
 
 export default function MocksPage(props: Props) {
-  const { store, theme, onToggleTheme, provider, model, orientation, editorFontSize, editorFontFamily, onOpenSettings, focus } = props;
+  const { store, theme, onToggleTheme, provider, model, orientation, editorFontSize, editorFontFamily, onOpenSettings, ai, focus } = props;
   const s = store.state;
   const [active, setActive] = useState<Active | null>(null);
   const [section, setSection] = useState<string>('any');
@@ -77,15 +80,15 @@ export default function MocksPage(props: Props) {
   const byKind = (k: MockKind) => { const g = s.mocks.filter(m => m.kind === k && m.score != null); return g.length ? (g.reduce((n, m) => n + (m.score ?? 0), 0) / g.length).toFixed(2) : '—'; };
 
   if (active?.kind === 'coding') {
-    return <GoogleDSA theme={theme} onToggleTheme={onToggleTheme} store={store} provider={provider} model={model} orientation={orientation} editorFontSize={editorFontSize} editorFontFamily={editorFontFamily} onOpenSettings={onOpenSettings}
+    return <GoogleDSA theme={theme} onToggleTheme={onToggleTheme} store={store} provider={provider} model={model} orientation={orientation} editorFontSize={editorFontSize} editorFontFamily={editorFontFamily} onOpenSettings={onOpenSettings} ai={ai}
       mock={{ problem: active.problem, onEnd: record('coding', active.problem), onAbort: () => setActive(null) }} />;
   }
   if (active?.kind === 'design') {
     const dp = DESIGN_PROMPTS.find(d => d.id === active.promptId)!;
-    return <DesignPage theme={theme} store={store} provider={provider} model={model} orientation={orientation} mock={{ promptId: active.promptId, onEnd: record('design', dp.title), onAbort: () => setActive(null) }} />;
+    return <DesignPage theme={theme} store={store} provider={provider} model={model} orientation={orientation} ai={ai} mock={{ promptId: active.promptId, onEnd: record('design', dp.title), onAbort: () => setActive(null) }} />;
   }
   if (active?.kind === 'behavioural') {
-    return <BehaviouralPage theme={theme} store={store} provider={provider} model={model} orientation={orientation} mock={{ questions: active.questions, onEnd: record('behavioural', `${active.questions.length} G&L questions`), onAbort: () => setActive(null) }} />;
+    return <BehaviouralPage theme={theme} store={store} provider={provider} model={model} orientation={orientation} ai={ai} mock={{ questions: active.questions, onEnd: record('behavioural', `${active.questions.length} G&L questions`), onAbort: () => setActive(null) }} />;
   }
 
   return (
