@@ -31,6 +31,7 @@ export function normalise(raw: unknown): GoogleState {
     drills: Array.isArray(r.drills) ? r.drills : [],
     contacts: Array.isArray(r.contacts) ? r.contacts : [],
     applications: Array.isArray(r.applications) ? r.applications : [],
+    notebook: Array.isArray(r.notebook) ? r.notebook : [],
   };
 }
 

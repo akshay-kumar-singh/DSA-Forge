@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
-import { Sun, Moon, Settings, Save, Loader2, CalendarDays, Code2, Network, Users, Timer, ListChecks, ArrowLeft, Cloud, CloudOff, Target } from 'lucide-react';
+import { Sun, Moon, Settings, Save, Loader2, CalendarDays, Code2, Network, Users, Timer, ListChecks, ArrowLeft, Cloud, CloudOff, Target, NotebookPen, Sparkles } from 'lucide-react';
 import type { GoogleTab } from '@/lib/google/types';
 import type { PlanStatus } from '@/lib/google/plan';
 
@@ -14,6 +14,7 @@ const NAV: { id: GoogleTab; label: string; icon: React.ComponentType<{ size?: nu
   { id: 'behavioural', label: 'Behavioural', icon: Users },
   { id: 'mocks', label: 'Mocks', icon: Timer },
   { id: 'plan', label: 'Plan', icon: ListChecks },
+  { id: 'notes', label: 'Notes', icon: NotebookPen },
 ];
 
 interface Props {
@@ -26,10 +27,15 @@ interface Props {
   cloudOk: boolean | null;
   onSave: () => void;
   onOpenSettings: () => void;
+  /** The single assistant panel; rendered as a right column (overlay on narrow screens) */
+  assistant: React.ReactNode;
+  assistantOpen: boolean;
+  assistantTitle: string;
+  onToggleAssistant: () => void;
   children: React.ReactNode;
 }
 
-export default function GoogleShell({ theme, onToggleTheme, tab, onTab, status, isSaving, cloudOk, onSave, onOpenSettings, children }: Props) {
+export default function GoogleShell({ theme, onToggleTheme, tab, onTab, status, isSaving, cloudOk, onSave, onOpenSettings, assistant, assistantOpen, assistantTitle, onToggleAssistant, children }: Props) {
   const deltaText = !status.started ? `starts in ${-status.calendarDay}d` : status.delta === 0 ? 'on schedule' : `${status.delta > 0 ? '+' : ''}${status.delta}d`;
   const deltaCls = !status.started ? 'gp-chip-blue' : status.delta > 0 ? 'gp-chip-green' : status.delta < 0 ? 'gp-chip-red' : '';
 
@@ -40,7 +46,7 @@ export default function GoogleShell({ theme, onToggleTheme, tab, onTab, status, 
           <ArrowLeft size={14} /><span className="hidden md:inline">Forge</span>
         </Link>
         <div className="flex items-center gap-2 pl-2 border-l gp-border">
-          <GoogleMark />
+          <Target size={16} className="gp-blue shrink-0" aria-hidden />
           <span className="gp-display text-[15px] font-bold gp-t1 hidden sm:inline">Interview Prep</span>
         </div>
 
@@ -66,6 +72,10 @@ export default function GoogleShell({ theme, onToggleTheme, tab, onTab, status, 
             {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             <span className="hidden xl:inline">{isSaving ? 'Saved' : 'Save'}</span>
           </button>
+          <button onClick={onToggleAssistant} className={clsx('gp-btn gp-btn-sm', assistantOpen ? 'gp-btn-primary' : '')} title={`${assistantOpen ? 'Hide' : 'Show'} the assistant — ${assistantTitle} on this tab`} aria-pressed={assistantOpen}>
+            <Sparkles size={14} />
+            <span className="hidden lg:inline">{assistantTitle}</span>
+          </button>
           <button onClick={onToggleTheme} className="gp-btn gp-btn-sm gp-btn-icon" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
             {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
           </button>
@@ -75,11 +85,14 @@ export default function GoogleShell({ theme, onToggleTheme, tab, onTab, status, 
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
+      <div className="flex-1 min-h-0 flex overflow-hidden relative">
+        <main className="flex-1 min-w-0 min-h-0 overflow-hidden">{children}</main>
+        {assistantOpen && (
+          <aside className="gp-assistant shrink-0 min-h-0 overflow-hidden" aria-label="Assistant">
+            {assistant}
+          </aside>
+        )}
+      </div>
     </div>
   );
-}
-
-export function GoogleMark({ size = 16 }: { size?: number }) {
-  return <Target size={size} className="gp-blue shrink-0" aria-hidden />;
 }

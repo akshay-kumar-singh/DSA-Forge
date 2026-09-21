@@ -6,7 +6,7 @@
 
 import type { Language } from '@/lib/types';
 
-export type GoogleTab = 'today' | 'dsa' | 'design' | 'behavioural' | 'mocks' | 'plan';
+export type GoogleTab = 'today' | 'dsa' | 'design' | 'behavioural' | 'mocks' | 'plan' | 'notes';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -186,6 +186,10 @@ export interface Contact { id: string; name: string; via: string; status: Contac
 export type ApplicationStatus = 'applied' | 'recruiter' | 'phone' | 'onsite' | 'offer' | 'rejected';
 export interface Application { id: string; role: string; date: string; status: ApplicationStatus; note: string }
 
+// ── Notebook ────────────────────────────────────────
+/** A free-form note the user writes (a question + their answer, theory, anything). */
+export interface NotebookNote { id: string; title: string; body: string; week: number; created: string; updated: string }
+
 // ── Persisted state (one document, JSON payload) ────
 export interface GoogleState {
   version: 1;
@@ -204,6 +208,7 @@ export interface GoogleState {
   drills: DrillResult[];
   contacts: Contact[];                     // referral map
   applications: Application[];
+  notebook: NotebookNote[];                // the Notes tab
 }
 
 export const EMPTY_GOOGLE_STATE: GoogleState = {
@@ -223,4 +228,5 @@ export const EMPTY_GOOGLE_STATE: GoogleState = {
   drills: [],
   contacts: [],
   applications: [],
+  notebook: [],
 };

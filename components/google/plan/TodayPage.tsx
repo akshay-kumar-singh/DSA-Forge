@@ -2,19 +2,17 @@
 
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
-import { Clock, ChevronRight, Sparkles, Flag, Target, Info, HelpCircle, ArrowRight, Check, Zap } from 'lucide-react';
+import { Clock, ChevronRight, Sparkles, Target, ArrowRight, Check, Zap } from 'lucide-react';
 import StatusCard from '../shared/StatusCard';
-import TaskRow, { KIND, type OnTab } from './TaskRow';
+import TaskRow, { KIND, type OnTab, type OnAsk } from './TaskRow';
 import { usePlanToggle } from './usePlanToggle';
 import type { GoogleStore } from '../useGoogleStore';
 import type { AIProvider } from '@/lib/types';
 import type { PlanDay } from '@/lib/google/types';
 import { PLAN_WEEKS, phaseOf, fmtDate, isDayDone, type PlanStatus } from '@/lib/google/plan';
 import { resolveTaskItems } from '@/lib/google/today';
-import { GOOGLE_SECTIONS, GOOGLE_TOTAL, sectionById } from '@/lib/google/problems';
+import { sectionById } from '@/lib/google/problems';
 import { getDueProblems } from '@/lib/revision';
-import { DESIGN_PROMPTS } from '@/lib/google/system-design';
-import { STORY_SEEDS } from '@/lib/google/behavioural';
 
 interface Props {
   theme: 'dark' | 'light';
@@ -25,13 +23,18 @@ interface Props {
   plan: PlanDay[];
   status: PlanStatus;
   onTab: OnTab;
+  onAsk?: OnAsk;
 }
 
 export const GATE_EXPLAINER = 'A gate is the exit condition of a phase. You do not move on because the calendar says so — you move on when every line is true. If a gate is unmet, repeat the last two weeks. This is the difference between arriving at week 26 ready and arriving unable to do week 12\'s material.';
 
-export default function TodayPage({ store, plan, status, onTab }: Props) {
+/**
+ * Today = the day's tasks, and only what helps you do them: where you are in
+ * the plan, this week's theme, what is due for revision. Stats, gates and
+ * the full calendar live in the Plan tab.
+ */
+export default function TodayPage({ store, plan, status, onTab, onAsk }: Props) {
   const s = store.state;
-  const [showGateHelp, setShowGateHelp] = useState(false);
   const planToggle = usePlanToggle(store, plan);
   // A day you finish in this session stays on screen as done instead of vanishing.
   const [pinned, setPinned] = useState<number | null>(null);
@@ -54,10 +57,6 @@ export default function TodayPage({ store, plan, status, onTab }: Props) {
   const behindDays = status.started ? Math.max(0, Math.min(status.calendarDay, status.totalDays - 1) - status.currentDay) : 0;
 
   const due = getDueProblems(s.lastReviewDate, s.reviewCount, s.mastered);
-  const designsDone = DESIGN_PROMPTS.filter(d => (s.designs[d.id] && s.designs[d.id] !== '[]') || (s.designDocs[d.id] ?? '').trim()).length;
-  const storiesDone = STORY_SEEDS.filter(st => { const x = s.stories[st.id]; return x && x.situation && x.action && x.result; }).length;
-  const graded = s.mocks.filter(m => m.score != null);
-  const avg = graded.length ? (graded.reduce((n, m) => n + (m.score ?? 0), 0) / graded.length).toFixed(2) : '—';
   const weekSection = curWeek?.sections[0] ? sectionById(curWeek.sections[0]) : undefined;
   const weekMastered = weekSection ? weekSection.problems.filter(p => s.mastered.includes(p.name)).length : 0;
   const weekDays = plan.filter(d => d.week === cur.week);
@@ -76,15 +75,7 @@ export default function TodayPage({ store, plan, status, onTab }: Props) {
           <Notice tone="red">You are <b>{behindDays} day{behindDays === 1 ? '' : 's'} behind</b> the calendar. Don&apos;t skip ahead — clear Day {cur.day + 1} first; the ready date moves with you.</Notice>
         )}
 
-        {/* Progress strip — the four counters, one line */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Stat label="DSA mastered" value={s.mastered.length} of={`/ ${GOOGLE_TOTAL}`} pct={s.mastered.length / GOOGLE_TOTAL} onClick={() => onTab('dsa')} />
-          <Stat label="Designs practised" value={designsDone} of={`/ ${DESIGN_PROMPTS.length}`} pct={designsDone / DESIGN_PROMPTS.length} onClick={() => onTab('design')} />
-          <Stat label="STAR stories" value={storiesDone} of={`/ ${STORY_SEEDS.length}`} pct={storiesDone / STORY_SEEDS.length} onClick={() => onTab('behavioural')} />
-          <Stat label="Mocks" value={s.mocks.length} of={`· avg ${avg}`} pct={Math.min(1, s.mocks.length / 12)} onClick={() => onTab('mocks')} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-4 items-start">
           {/* ── Main: today, then what comes next ── */}
           <div className="space-y-4 min-w-0">
             {status.finished ? (
@@ -94,17 +85,17 @@ export default function TodayPage({ store, plan, status, onTab }: Props) {
                 <p className="text-sm gp-t2">Every plan day is done. Keep the mocks going and reread roadmap §6 the night before the loop.</p>
               </div>
             ) : (
-              <DayCard day={cur} title={curDone ? 'Today — done' : 'Today'} store={store} onToggle={toggle} onTab={onTab} accent />
+              <DayCard day={cur} title={curDone ? 'Today — done' : 'Today'} store={store} onToggle={toggle} onTab={onTab} onAsk={onAsk} accent />
             )}
             {next && !status.finished && (
               curDone
-                ? <DayCard day={next} title={aheadDays > 1 ? `Next up — you are ${aheadDays - 1} day${aheadDays - 1 === 1 ? '' : 's'} ahead; pull further if you have the energy` : 'Next up — pull ahead if you have the energy'} store={store} onToggle={toggle} onTab={onTab} />
+                ? <DayCard day={next} title={aheadDays > 1 ? `Next up — you are ${aheadDays - 1} day${aheadDays - 1 === 1 ? '' : 's'} ahead; pull further if you have the energy` : 'Next up — pull ahead if you have the energy'} store={store} onToggle={toggle} onTab={onTab} onAsk={onAsk} />
                 : <UpNext day={next} store={store} />
             )}
-            <p className="text-[11.5px] gp-t3 leading-relaxed px-1 flex gap-1.5"><Info size={13} className="shrink-0 mt-0.5" />Every pattern week has the same shape: theory Monday, 2 problems a day easy → medium plus an optional bonus, a timed set Saturday, 2 hards Sunday. Every problem in the bank has a day — the week&apos;s core inside that week, the rest as bonuses or in maintenance weeks. Problem tasks tick themselves once the required problems under them are mastered (bonuses never block); revision ticks itself when nothing is due; tick the rest by hand. When a whole day is done, Today moves on and the ready date comes forward.</p>
+            <p className="text-[11.5px] gp-t3 px-1">Problem tasks tick themselves when their problems are mastered; tick the rest by hand. Not sure what a task means? Press its <span className="gp-t2">?</span>.</p>
           </div>
 
-          {/* ── Side: context for the day ── */}
+          {/* ── Side: this week, and what is due ── */}
           <aside className="space-y-4 lg:sticky lg:top-0">
             <div className="gp-card p-4 space-y-2.5">
               <div className="gp-label flex items-center gap-1.5"><Target size={12} className="gp-blue" />This week <span className="gp-chip gp-chip-xs ml-auto">{weekDone}/{weekDays.length} days</span></div>
@@ -125,19 +116,6 @@ export default function TodayPage({ store, plan, status, onTab }: Props) {
                 <span className="flex items-center gap-1.5"><Zap size={13} className="gp-yellow" />Pattern-trigger drill</span>
                 <span className="text-[11px] gp-t3 font-normal">{lastDrill ? `last ${lastDrill.correct}/${lastDrill.total}` : '5 min'}</span>
               </button>
-              <div className="pt-1">
-                <div className="flex items-center justify-between mb-1.5"><span className="gp-label">Pattern coverage</span><span className="text-[11px] gp-t3">{GOOGLE_SECTIONS.length} sections</span></div>
-                <div className="flex gap-1">
-                  {GOOGLE_SECTIONS.map(sec => {
-                    const m = sec.problems.filter(p => s.mastered.includes(p.name)).length;
-                    const pct = m / sec.problems.length;
-                    return (
-                      <button key={sec.id} onClick={() => onTab('dsa', { section: sec.id })} title={`W${sec.week} ${sec.title} — ${m}/${sec.problems.length}`}
-                        className={clsx('flex-1 h-2.5 rounded-sm transition-colors', pct === 1 ? 'gp-cov-full' : pct > 0 ? 'gp-cov-part' : 'gp-cov-none', sec.id === weekSection?.id && 'gp-cov-cur')} aria-label={sec.title} />
-                    );
-                  })}
-                </div>
-              </div>
             </div>
 
             <div className="gp-card p-4 space-y-2">
@@ -159,29 +137,10 @@ export default function TodayPage({ store, plan, status, onTab }: Props) {
               )}
             </div>
 
-            <div className="gp-card p-4 space-y-2">
-              <div className="gp-label flex items-center gap-1.5">
-                <Flag size={12} className="gp-red" />Gate {phase.id.slice(1)} · {phase.title}
-                <button onClick={() => setShowGateHelp(v => !v)} className={clsx('ml-auto gp-btn gp-btn-ghost gp-btn-sm normal-case tracking-normal', showGateHelp && 'gp-btn-active')} title="What do these mean and how do I do them?">
-                  <HelpCircle size={12} />{showGateHelp ? 'Hide' : 'How?'}
-                </button>
-              </div>
-              <ul className="space-y-2">
-                {phase.gate.map((g, i) => {
-                  const id = `gate-${phase.id}-${i}`;
-                  return (
-                    <li key={id} className="flex items-start gap-2">
-                      <input type="checkbox" checked={!!s.planDone[id]} onChange={() => toggle(id)} className="gp-check mt-0.5" aria-label={g} />
-                      <div className="min-w-0">
-                        <span className={clsx('text-[13px] leading-snug', s.planDone[id] ? 'line-through gp-t3' : 'gp-t1')}>{g}</span>
-                        {showGateHelp && <p className="text-[12px] gp-t2 leading-relaxed mt-1">{phase.gateHelp[i]}</p>}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="text-[11px] gp-t3 leading-snug flex gap-1.5 pt-1"><Info size={12} className="shrink-0 mt-0.5" />The exit condition of this phase — tick a line only when it is true. Full explanation in the Plan tab.</p>
-            </div>
+            <button onClick={() => onTab('plan')} className="w-full gp-card gp-card-hover px-4 py-3 text-left flex items-center justify-between">
+              <span className="text-[13px] gp-t2">Gate {phase.id.slice(1)} · {phase.gate.filter((_, i) => s.planDone[`gate-${phase.id}-${i}`]).length}/{phase.gate.length} lines ticked</span>
+              <ChevronRight size={14} className="gp-t3" />
+            </button>
           </aside>
         </div>
       </div>
@@ -197,7 +156,7 @@ function Notice({ tone, children }: { tone: 'blue' | 'red'; children: React.Reac
   );
 }
 
-export function DayCard({ day, title, store, onToggle, onTab, accent }: { day: PlanDay; title: string; store: GoogleStore; onToggle: (id: string) => void; onTab: OnTab; accent?: boolean }) {
+export function DayCard({ day, title, store, onToggle, onTab, onAsk, accent }: { day: PlanDay; title: string; store: GoogleStore; onToggle: (id: string) => void; onTab: OnTab; onAsk?: OnAsk; accent?: boolean }) {
   const s = store.state;
   const doneCount = day.tasks.filter(t => s.planDone[t.id]).length;
   const week = PLAN_WEEKS[day.week];
@@ -213,7 +172,7 @@ export function DayCard({ day, title, store, onToggle, onTab, accent }: { day: P
         <span className={clsx('gp-chip shrink-0', all ? 'gp-chip-green' : '')}>{all && <Check size={11} />}{doneCount}/{day.tasks.length} done</span>
       </div>
       <div className="gp-divide px-1 pb-1">
-        {day.tasks.map(t => <TaskRow key={t.id} task={t} done={!!s.planDone[t.id]} items={resolveTaskItems(t, s)} onToggle={() => onToggle(t.id)} onTab={onTab} />)}
+        {day.tasks.map(t => <TaskRow key={t.id} task={t} done={!!s.planDone[t.id]} items={resolveTaskItems(t, s)} onToggle={() => onToggle(t.id)} onTab={onTab} onAsk={onAsk} />)}
       </div>
     </div>
   );
@@ -246,17 +205,5 @@ function UpNext({ day, store }: { day: PlanDay; store: GoogleStore }) {
         })}
       </ul>
     </div>
-  );
-}
-
-function Stat({ label, value, of, pct, onClick }: { label: string; value: number; of: string; pct: number; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="gp-card gp-card-hover px-3.5 py-2.5 text-left">
-      <div className="flex items-center justify-between gap-2">
-        <span className="gp-label normal-case tracking-normal text-[11.5px]">{label}</span>
-        <span className="flex items-baseline gap-1"><span className="gp-num text-[20px] gp-blue">{value}</span><span className="text-[11px] gp-t3">{of}</span></span>
-      </div>
-      <div className="gp-track h-1 mt-2"><div className={clsx('gp-bar', pct >= 1 && 'gp-bar-green')} style={{ width: `${Math.min(100, pct * 100)}%` }} /></div>
-    </button>
   );
 }
