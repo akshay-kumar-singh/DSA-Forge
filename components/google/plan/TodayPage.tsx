@@ -50,6 +50,7 @@ export default function TodayPage({ store, plan, status, onTab, onAsk }: Props) 
   const curIdx = pinned != null && pinned < status.currentDay && isDayDone(plan[pinned], s.planDone) ? pinned : base;
   const cur = plan[curIdx];
   const curDone = isDayDone(cur, s.planDone);
+  const curIsToday = !status.started || cur.day === status.calendarDay;
   const next = plan[curDone ? status.currentDay : curIdx + 1];
   const aheadDays = curDone && next ? next.day - cur.day : 0;
   const curWeek = PLAN_WEEKS[cur?.week ?? 0];
@@ -85,7 +86,7 @@ export default function TodayPage({ store, plan, status, onTab, onAsk }: Props) 
                 <p className="text-sm gp-t2">Every plan day is done. Keep the mocks going and reread roadmap §6 the night before the loop.</p>
               </div>
             ) : (
-              <DayCard day={cur} title={curDone ? 'Today — done' : 'Today'} store={store} onToggle={toggle} onTab={onTab} onAsk={onAsk} accent />
+              <DayCard day={cur} title={curDone ? (curIsToday ? 'Today — done' : `Day ${cur.day + 1} — done`) : 'Today'} store={store} onToggle={toggle} onTab={onTab} onAsk={onAsk} accent />
             )}
             {next && !status.finished && (
               curDone
