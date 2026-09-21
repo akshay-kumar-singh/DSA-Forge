@@ -84,8 +84,8 @@ export const DESIGN_PROMPTS: DesignPrompt[] = [
     deepDives: ['Transcoding a 4-hour video — parallelise how?', 'A video goes viral in one country', 'Cost: which layer is most expensive and how do you cut it?'],
   },
   {
-    id: 'collab-editing', title: 'Google Docs collaborative editing', track: 'backend', tier: 'stretch',
-    prompt: 'Design collaborative document editing like Google Docs.',
+    id: 'collab-editing', title: 'Collaborative document editing', track: 'backend', tier: 'stretch',
+    prompt: 'Design collaborative document editing — many people typing in one document at once.',
     clarifiers: ['How many concurrent editors per doc?', 'Offline editing?', 'Version history?', 'Rich text or plain?', 'Latency expectation for seeing others\' edits?'],
     scale: ['1M active docs, avg 2 editors, max 100', 'Edits are small (a char) and frequent', 'History retained for a year'],
     mustCover: ['OT vs CRDT — pick one and defend it', 'WebSocket session per doc; a doc lives on one server (sticky)', 'Operation log as the source of truth; periodic snapshots', 'Presence and cursors'],
@@ -125,8 +125,8 @@ export const DESIGN_PROMPTS: DesignPrompt[] = [
     deepDives: ['A worker dies mid-job', 'Clock drift', 'A million jobs due at midnight'],
   },
   {
-    id: 'file-storage', title: 'Google Drive (file sync)', track: 'backend', tier: 'stretch',
-    prompt: 'Design Google Drive.',
+    id: 'file-storage', title: 'Cloud file sync', track: 'backend', tier: 'stretch',
+    prompt: 'Design a cloud file-sync service — files on every device, always in sync.',
     clarifiers: ['Sync across devices?', 'File size limits?', 'Sharing and permissions?', 'Versioning?'],
     scale: ['50M users, 10 GB each → 500 PB', 'Upload bandwidth heavy', 'Small edits to big files are common'],
     mustCover: ['Chunking + content-addressed dedup', 'Metadata DB vs blob store', 'Sync: change notifications via long-poll/WebSocket', 'Conflict resolution'],
@@ -143,7 +143,7 @@ export const DESIGN_PROMPTS: DesignPrompt[] = [
   // ── Frontend — his edge ───────────────────────────
   {
     id: 'fe-typeahead', title: 'Frontend: typeahead component', track: 'frontend', tier: 'core',
-    prompt: 'Design the autocomplete search box on the Google homepage — the client side.',
+    prompt: 'Design the autocomplete search box on a search-engine homepage — the client side.',
     clarifiers: ['Keyboard navigation required?', 'Accessibility level?', 'Recent searches offline?', 'Mobile?'],
     scale: ['Keystroke → suggestion in < 100 ms perceived', 'Debounce 150–300 ms', 'Cancel stale requests'],
     mustCover: ['Component API and state machine', 'Debounce, request cancellation (AbortController), race handling', 'ARIA combobox pattern, focus management', 'Client cache by prefix; optimistic rendering'],
@@ -168,7 +168,7 @@ export const DESIGN_PROMPTS: DesignPrompt[] = [
   },
   {
     id: 'fe-collab', title: 'Frontend: collaborative editor', track: 'frontend', tier: 'stretch',
-    prompt: 'Design the browser side of Google Docs.',
+    prompt: 'Design the browser side of a collaborative document editor.',
     clarifiers: ['Rich text?', 'Cursor presence?', 'Offline edits?', 'Undo semantics with collaborators?'],
     scale: ['Keystroke latency < 16 ms locally', 'Remote edits visible < 200 ms', 'Documents of 100k characters'],
     mustCover: ['Document model and rendering strategy (contenteditable vs custom)', 'Local-first apply, then sync operations', 'Presence layer', 'Undo stack that ignores others\' edits'],
@@ -176,7 +176,7 @@ export const DESIGN_PROMPTS: DesignPrompt[] = [
   },
   {
     id: 'fe-gallery', title: 'Frontend: photo gallery', track: 'frontend', tier: 'stretch',
-    prompt: 'Design the Google Photos web grid.',
+    prompt: 'Design a photo-library web grid.',
     clarifiers: ['Justified layout?', 'Selection and bulk actions?', 'Zoom / lightbox?', 'Upload progress?'],
     scale: ['100k photos per user', 'Thumbnails 200 px; originals 5 MB', 'Smooth scrubbing across years'],
     mustCover: ['Virtualised justified grid; layout computed from aspect ratios', 'Progressive images (blur-up), srcset', 'Date-based sections and a scrubber', 'Keyboard + screen-reader navigation of a grid'],

@@ -73,7 +73,7 @@ const GoogleSidebar = React.memo(function GoogleSidebar({
       <div className="gp-side-head shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <span className="w-8 h-8 rounded-lg flex items-center justify-center gp-blue" style={{ background: 'var(--gp-blue-wash)' }}><Code2 size={16} /></span>
-          <div className="min-w-0"><div className="text-[14px] font-bold gp-t1 truncate">Google DSA</div><div className="text-[11px] gp-t3">14 patterns · {GOOGLE_SECTIONS.length} sections</div></div>
+          <div className="min-w-0"><div className="text-[14px] font-bold gp-t1 truncate">Prep DSA</div><div className="text-[11px] gp-t3">14 patterns · {GOOGLE_SECTIONS.length} sections</div></div>
         </div>
         <div className="flex items-center gap-1">
           {onDrill && <button onClick={onDrill} className="gp-btn gp-btn-ghost gp-btn-sm gp-btn-icon gp-yellow" title="Pattern-trigger drill: which pattern does this problem want?"><Zap size={14} /></button>}

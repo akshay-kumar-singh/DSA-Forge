@@ -1,5 +1,5 @@
 // ======================================================
-// GOOGLE PREP — the 26-week plan as a task queue
+// INTERVIEW PREP — the 26-week plan as a task queue
 //
 // The roadmap is calendar-shaped (week themes, gates). Here it
 // becomes a queue of plan-days. "Today" is the first day with
@@ -58,8 +58,8 @@ export const PLAN_PHASES: PlanPhase[] = [
     id: 'P0', title: 'Setup', weeks: [0, 0],
     gate: ['Resume in XYZ format, a number in every bullet', 'Referral map: 25 named people, nobody contacted yet', 'You can say how mastery, revision and the plan checkboxes connect'],
     gateHelp: [
-      'Google reads resumes in XYZ form: "Accomplished X, as measured by Y, by doing Z." Rewrite every bullet that way. Lead with "payment systems" not "frontend"; make the Socket.IO dispute chat a full-stack bullet; make Workzen carry the backend story. Tick this when every bullet has a number and follows XYZ.',
-      'Plan tab → referral map. Twenty-five real names: college seniors at Google, ex-colleagues who moved, maintainers of repos you contributed to, GDG Bangalore regulars, Google engineers active on LinkedIn or X. Asks start in week 18 — mapping now, contacting later.',
+      'The company reads resumes in XYZ form: "Accomplished X, as measured by Y, by doing Z." Rewrite every bullet that way. Lead with "payment systems" not "frontend"; make the Socket.IO dispute chat a full-stack bullet; make Workzen carry the backend story. Tick this when every bullet has a number and follows XYZ.',
+      'Plan tab → referral map. Twenty-five real names: college seniors now at the company, ex-colleagues who moved, maintainers of repos you contributed to, local dev-meetup regulars, engineers there who are active on LinkedIn or X. Asks start in week 18 — mapping now, contacting later.',
       'Mastered checkbox = pass 1. "Due for revision" = passes 2 and 3 (7 → 14 → 30 days). Problem tasks tick themselves when every problem under them is mastered; the rest you tick by hand. When a whole day is done, Today moves on and the ready date comes forward.',
     ],
   },
@@ -115,7 +115,7 @@ export const PLAN_WEEKS: PlanWeek[] = [
         { label: 'Every bullet gets a number', sub: '30%, 35%, 5,000 MAU — you already have them' },
       ] },
       { day: 2, kind: 'outreach', text: 'Map the referral network: 25 named people in the referral map. Do not contact anyone yet — asks start in week 18, applications in week 20 (a rejection means a 6–12 month cooldown).', link: { tab: 'plan', id: 'outreach' }, items: [
-        { label: 'College seniors now at Google' }, { label: 'Ex-colleagues who moved' }, { label: 'Maintainers of repos you have contributed to' }, { label: 'GDG Bangalore regulars' }, { label: 'Google engineers active on LinkedIn or X' },
+        { label: 'College seniors now at the company' }, { label: 'Ex-colleagues who moved' }, { label: 'Maintainers of repos you have contributed to' }, { label: 'Local dev-meetup regulars' }, { label: 'Engineers there who are active on LinkedIn or X' },
       ] },
     ] },
   { week: 1, phase: 'P1', theme: 'Arrays, two pointers, prefix sums', detail: 'In-place manipulation, partitioning, sorted-array pairs.', sections: ['arrays'] },
@@ -174,13 +174,13 @@ export const PLAN_WEEKS: PlanWeek[] = [
     specials: [
       { day: 0, text: 'Write STAR stories 1–4: hardest problem, ambiguous requirements, disagreement, something that failed.', kind: 'behavioural', link: { tab: 'behavioural', id: 'hardest' } },
       { day: 1, text: 'Write STAR stories 5–8: beyond your role, mentoring, difficult feedback, decision without data.', kind: 'behavioural', link: { tab: 'behavioural', id: 'beyond' } },
-      { day: 2, text: 'Write STAR stories 9–12: influence without authority, competing priorities, most proud of, why Google.', kind: 'behavioural', link: { tab: 'behavioural', id: 'influence' } },
+      { day: 2, text: 'Write STAR stories 9–12: influence without authority, competing priorities, most proud of, why this company.', kind: 'behavioural', link: { tab: 'behavioural', id: 'influence' } },
       { day: 3, text: 'Rehearse all 12 to two minutes each, timed. Record yourself. Listen back.', kind: 'behavioural', link: { tab: 'behavioural' } },
       { day: 4, text: 'APPLICATIONS GO OUT: Software Engineer II reqs (Payments first). Referral + direct application in the same week — log each one.', link: { tab: 'plan', id: 'outreach' } },
       { day: 5, text: 'Behavioural mock: 4 questions with the AI interviewer. Start interviewing elsewhere — parallel funnel.', kind: 'mock', link: { tab: 'mocks', kind: 'behavioural' } },
       { day: 6, text: 'Fix the two weakest stories. Confirm every application and referral is logged in the tracker.', kind: 'behavioural', link: { tab: 'plan', id: 'outreach' } },
     ] },
-  { week: 21, phase: 'P3', theme: 'Google flavour', detail: 'Open-ended problems, layered follow-ups, design-and-implement hybrids, hard problems. Design stays warm: two stretch prompts this week, starting with payments.', sections: ['google-flavour'],
+  { week: 21, phase: 'P3', theme: 'Company flavour', detail: 'Open-ended problems, layered follow-ups, design-and-implement hybrids, hard problems. Design stays warm: two stretch prompts this week, starting with payments.', sections: ['google-flavour'],
     specials: [
       { day: 1, kind: 'design', text: 'Design re-run: Payment system — full 45-minute run + doc. Your day job; lead with what you have actually debugged.', link: { tab: 'design', id: 'payments' } },
       { day: 3, kind: 'design', text: 'Design re-run: Distributed cache — full 45-minute run + doc.', link: { tab: 'design', id: 'distributed-cache' } },
@@ -194,9 +194,9 @@ export const PLAN_WEEKS: PlanWeek[] = [
       { day: 6, kind: 'admin', text: 'Gate 3 check: cold design prompt driven for 45 min; 12 stories at two minutes without notes; applications in and ≥3 referrals in flight.', link: { tab: 'plan' } },
     ] },
   { week: 23, phase: 'P4', theme: 'Two timed problems daily', detail: '45 min each, out loud, as graded rounds. Two mocks this week, one stretch design.', sections: [], maintenance: true,
-    specials: [{ day: 0, kind: 'design', text: 'Design re-run: Google Drive (file sync) — full 45-minute run + doc.', link: { tab: 'design', id: 'file-storage' } }, { day: 2, text: 'Mock #1 this week — coding.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }, { day: 5, text: 'Mock #2 this week — coding or design.', kind: 'mock', link: { tab: 'mocks', kind: 'design' } }] },
-  { week: 24, phase: 'P4', theme: 'Google-tagged problems', detail: 'The rest of the Google-flavour section. Full spaced-repetition sweep of everything flagged. Two stretch designs.', sections: ['google-flavour'], maintenance: true,
-    specials: [{ day: 1, kind: 'design', text: 'Design re-run: Metrics & monitoring — full 45-minute run + doc.', link: { tab: 'design', id: 'metrics' } }, { day: 3, kind: 'design', text: 'Design re-run: Google Docs collaborative editing — full 45-minute run + doc.', link: { tab: 'design', id: 'collab-editing' } }, { day: 5, text: 'Mock: one coding round.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }] },
+    specials: [{ day: 0, kind: 'design', text: 'Design re-run: Cloud file sync — full 45-minute run + doc.', link: { tab: 'design', id: 'file-storage' } }, { day: 2, text: 'Mock #1 this week — coding.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }, { day: 5, text: 'Mock #2 this week — coding or design.', kind: 'mock', link: { tab: 'mocks', kind: 'design' } }] },
+  { week: 24, phase: 'P4', theme: 'Company-tagged problems', detail: 'The rest of the Company-flavour section. Full spaced-repetition sweep of everything flagged. Two stretch designs.', sections: ['google-flavour'], maintenance: true,
+    specials: [{ day: 1, kind: 'design', text: 'Design re-run: Metrics & monitoring — full 45-minute run + doc.', link: { tab: 'design', id: 'metrics' } }, { day: 3, kind: 'design', text: 'Design re-run: Collaborative document editing — full 45-minute run + doc.', link: { tab: 'design', id: 'collab-editing' } }, { day: 5, text: 'Mock: one coding round.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }] },
   { week: 25, phase: 'P4', theme: 'Full mock loop #3', detail: 'Real interviews elsewhere as live reps. Refine the behavioural stories. Last stretch design.', sections: [], maintenance: true,
     specials: [{ day: 1, kind: 'design', text: 'Design re-run: Video streaming — full 45-minute run + doc.', link: { tab: 'design', id: 'video-streaming' } }, { day: 4, text: 'Full mock loop #3, part 1: 2 coding rounds.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }, { day: 5, text: 'Full mock loop #3, part 2: 1 coding + 1 design + 1 behavioural.', kind: 'mock', link: { tab: 'mocks', kind: 'behavioural' } }, { day: 6, text: 'Refine the behavioural stories from the loop feedback.', kind: 'behavioural', link: { tab: 'behavioural' } }] },
   { week: 26, phase: 'P4', theme: 'Taper', detail: 'One problem a day, reread notes, sleep properly. You are ready.', sections: [], maintenance: true,

@@ -50,7 +50,7 @@ const COACH_ACTIONS: QuickAction[] = [
   { label: 'Review code', icon: MessageSquare, msg: 'Review my current code: what is right, what breaks and on which input, and the next step — conceptually, no solution code.' },
   { label: 'Hint', icon: Lightbulb, msg: 'Give me the next hint level only.' },
   { label: 'Complexity', icon: Gauge, msg: 'Ask me for my time and space complexity and then check my answer.' },
-  { label: 'Follow-up', icon: HelpCircle, msg: 'Ask me one Google-style follow-up for this problem (stream / 10^12 elements / distributed / O(1) space / thread-safe / testing).' },
+  { label: 'Follow-up', icon: HelpCircle, msg: "Ask me one follow-up in the company's interview style for this problem (stream / 10^12 elements / distributed / O(1) space / thread-safe / testing)." },
 ];
 const MOCK_ACTIONS: QuickAction[] = [
   { label: 'Clarify', icon: HelpCircle, msg: 'Before I start: what are the constraints on input size and values, and can I assume the input fits in memory?' },
@@ -137,7 +137,7 @@ export default function GoogleDSA({ theme, onToggleTheme, store, provider, model
       if (!was) st.reviewCount[p] = 0;
     });
     if (was) toast.info(`${p} is back on the active list.`);
-    else toast.success('Mastered — Google track.', { description: p, duration: 4000 });
+    else toast.success('Mastered — Prep track.', { description: p, duration: 4000 });
     store.save({ silent: true });
     trackGoogle(was ? 'unmastered' : 'mastered', p);
   }, [s, store]);
@@ -280,7 +280,7 @@ export default function GoogleDSA({ theme, onToggleTheme, store, provider, model
               <Panel id="g-chat" defaultSize="28%" minSize="240px" maxSize="50%" className="min-w-0 min-h-0 overflow-hidden">
                 <GoogleChatPanel
                   theme={theme}
-                  title={isMock ? 'Interviewer' : 'Forge AI · Google'}
+                  title={isMock ? 'Interviewer' : 'Forge AI · Prep'}
                   subtitle={isMock ? 'Mock coding round — evaluating, not coaching' : `${section?.title ?? ''}${info ? ` · ${info.difficulty}` : ''}`}
                   icon={<Shield size={18} />}
                   messages={chat.messages}

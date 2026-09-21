@@ -1,7 +1,7 @@
 'use client';
 
 // ======================================================
-// /google — Google Prep. A separate route so the NeetCode
+// /prep — Interview Prep. A separate route so the NeetCode
 // Forge at / is untouched. Shares theme + AI settings via
 // the same localStorage keys; progress lives in its own
 // document (/api/google) and never touches /api/progress.
@@ -13,7 +13,7 @@ import { Toaster } from 'sonner';
 import { AI_PROVIDERS } from '@/lib/problems';
 import type { AIProvider } from '@/lib/types';
 import type { GoogleTab, DeepLink } from '@/lib/google/types';
-import './google.css';
+import './prep.css';
 import { planFor, computePlanStatus } from '@/lib/google/plan';
 import { useGoogleStore } from '@/components/google/useGoogleStore';
 import GoogleShell from '@/components/google/GoogleShell';
@@ -29,7 +29,7 @@ const TABS: GoogleTab[] = ['today', 'dsa', 'design', 'behavioural', 'mocks', 'pl
 
 export interface Focus extends Partial<DeepLink> { n: number }
 
-export default function GooglePrepPage() {
+export default function InterviewPrepPage() {
   const store = useGoogleStore();
 
   // ── Theme (same key as the Forge, so both tracks match) ──

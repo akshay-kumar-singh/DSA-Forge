@@ -2,7 +2,7 @@
 // GOOGLE PREP — GitHub tracker helpers (server only)
 // Same Git Data API flow as app/api/track/route.ts (the NeetCode
 // tracker), kept separate so that route stays untouched. Writes
-// go to a google/ folder in the same tracker repo.
+// go to a prep/ folder in the same tracker repo.
 // ======================================================
 
 const API = 'https://api.github.com';
