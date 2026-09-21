@@ -579,7 +579,11 @@ export interface PlanStatus {
   currentDay: number;
   /** Calendar day index for today (can be negative before the start) */
   calendarDay: number;
-  /** completedDays − calendarDay: + ahead, − behind */
+  /**
+   * + ahead, − behind, 0 on schedule. Today's day is due tonight, so it counts
+   * neither way: ahead only once tomorrow's day is done, behind only once
+   * yesterday's is still open.
+   */
   delta: number;
   daysLeft: number;
   projectedReady: Date;           // today + daysLeft
@@ -603,16 +607,23 @@ export function computePlanStatus(days: PlanDay[], state: Pick<GoogleState, 'pla
   if (currentDay === -1) currentDay = totalDays;
   const start = parseISODate(state.planStart);
   const calendarDay = Math.floor((today.getTime() - start.getTime()) / DAY_MS);
+  const started = calendarDay >= 0;
   const daysLeft = totalDays - completedDays;
+  // Plan days due by last night, and by tonight (today's day is open until then).
+  const dueYesterday = Math.min(Math.max(calendarDay, 0), totalDays);
+  const dueTonight = Math.min(Math.max(calendarDay + 1, 0), totalDays);
+  const delta = completedDays > dueTonight ? completedDays - dueTonight : completedDays < dueYesterday ? completedDays - dueYesterday : 0;
+  // What is left runs one day per calendar day — from today, or tomorrow once today's day is done.
+  const projectedReady = daysLeft === 0 ? today : addDays(started ? today : start, daysLeft + (started && completedDays > dueYesterday ? 1 : 0));
   const week20 = days.find(d => d.week === 20)?.date ?? addDays(start, 20 * 7);
   return {
     totalDays, completedDays, totalTasks, doneTasks, currentDay, calendarDay,
-    delta: completedDays - Math.min(Math.max(calendarDay, 0), totalDays),
+    delta,
     daysLeft,
-    projectedReady: addDays(today, daysLeft),
+    projectedReady,
     scheduledReady: addDays(start, totalDays),
     applyWindowOpens: week20,
-    started: calendarDay >= 0,
+    started,
     finished: completedDays >= totalDays,
   };
 }
