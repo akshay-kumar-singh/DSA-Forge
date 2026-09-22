@@ -113,7 +113,7 @@ export default function InterviewPrepPage() {
       try { window.history.pushState({ gp: 'tab', tab: t }, ''); } catch { /* ignore */ }
     }
     applyTab(t);
-    if (link && (link.section || link.problem || link.id || link.kind || link.drill)) setFocus(f => ({ n: f.n + 1, tab: t, ...link }));
+    if (link && (link.section || link.problem || link.id || link.kind || link.drill || link.theory)) setFocus(f => ({ n: f.n + 1, tab: t, ...link }));
   }, [applyTab]);
 
   // ── Browser Back: previous tab, and from the first tab → the landing page ──

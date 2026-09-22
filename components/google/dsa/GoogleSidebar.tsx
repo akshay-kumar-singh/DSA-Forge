@@ -1,22 +1,25 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { ChevronRight, ChevronDown, ExternalLink, X, Code2, Shuffle, CalendarDays, Zap } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronRight, ChevronDown, ExternalLink, X, Code2, Shuffle, CalendarDays, Zap, BookOpen } from 'lucide-react';
 import { clsx } from 'clsx';
 import SpacedRepetition from '@/components/forge/sidebar/SpacedRepetition';
 import { GOOGLE_SECTIONS, GOOGLE_TOTAL, GOOGLE_PROBLEMS, GOOGLE_SECTION_OF, leetcodeSlug } from '@/lib/google/problems';
 import { fmtDate } from '@/lib/google/plan';
-import type { PlanDay } from '@/lib/google/types';
+import type { PlanDay, GoogleProblem } from '@/lib/google/types';
 
 export interface SidebarFocus { n: number; section?: string; problem?: string }
 
 interface Props {
   selectedProblem: string;
+  /** Section whose pattern notes are open in place of a problem */
+  theorySection: string | null;
   mastered: string[];
   lastReviewDate: Record<string, string>;
   reviewCount: Record<string, number>;
   focus?: SidebarFocus;
   onSelect: (p: string) => void;
+  onSelectTheory: (sectionId: string) => void;
   onToggleMastered: (p: string) => void;
   onDrill?: () => void;
   /** problem → plan day it is scheduled on (from lib/google/plan) */
@@ -28,21 +31,41 @@ interface Props {
   onClose: () => void;
 }
 
+const shortDate = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
 const GoogleSidebar = React.memo(function GoogleSidebar({
-  selectedProblem, mastered, lastReviewDate, reviewCount, focus, onSelect, onToggleMastered, onMarkRevised, onRandomUnseen, onClose, schedule, bonus, onDrill,
+  selectedProblem, theorySection, mastered, lastReviewDate, reviewCount, focus, onSelect, onSelectTheory, onToggleMastered, onMarkRevised, onRandomUnseen, onClose, schedule, bonus, onDrill,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const selRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState<Record<string, boolean>>(() => {
     const sec = GOOGLE_SECTION_OF[selectedProblem];
-    return sec ? { [sec.id]: true } : {};
+    const o: Record<string, boolean> = sec ? { [sec.id]: true } : {};
+    if (theorySection) o[theorySection] = true;
+    return o;
   });
+
+  // Problems listed in the order the plan schedules them, so "next in the
+  // list" is "next on the plan". Anything unscheduled sits at the end.
+  const ordered = useMemo(() => {
+    const m = new Map<string, GoogleProblem[]>();
+    for (const sec of GOOGLE_SECTIONS) {
+      const day = (p: GoogleProblem) => schedule?.get(p.name)?.day ?? Number.POSITIVE_INFINITY;
+      m.set(sec.id, sec.problems.map((p, i) => ({ p, i })).sort((a, b) => day(a.p) - day(b.p) || a.i - b.i).map(x => x.p));
+    }
+    return m;
+  }, [schedule]);
 
   const [prevSel, setPrevSel] = useState(selectedProblem);
   if (prevSel !== selectedProblem) {
     setPrevSel(selectedProblem);
     const sec = GOOGLE_SECTION_OF[selectedProblem];
     if (sec && !open[sec.id]) setOpen({ ...open, [sec.id]: true });
+  }
+  const [prevTheory, setPrevTheory] = useState(theorySection);
+  if (prevTheory !== theorySection) {
+    setPrevTheory(theorySection);
+    if (theorySection && !open[theorySection]) setOpen({ ...open, [theorySection]: true });
   }
 
   // Deep link (section or problem) — open during render, scroll after commit
@@ -109,10 +132,16 @@ const GoogleSidebar = React.memo(function GoogleSidebar({
               {isOpen && (
                 <div className="pb-2 space-y-0.5">
                   <div className="px-2 pb-1 text-[11px] gp-t3 leading-snug">Reach for it when: {sec.trigger}</div>
-                  {sec.problems.map(pr => {
-                    const isSel = pr.name === selectedProblem;
+                  <button onClick={() => onSelectTheory(sec.id)} className={clsx('gp-side-item ml-1', theorySection === sec.id && 'gp-side-item-active')} title="The pattern notes: idea, trigger, code shape, worked examples — editable">
+                    <BookOpen size={13} className={theorySection === sec.id ? '' : 'gp-blue'} />
+                    <span className="flex-1 min-w-0 truncate font-semibold">Pattern notes</span>
+                    <span className="text-[10.5px] gp-t3 font-normal">read first</span>
+                  </button>
+                  {(ordered.get(sec.id) ?? sec.problems).map(pr => {
+                    const isSel = pr.name === selectedProblem && !theorySection;
                     const isM = mastered.includes(pr.name);
                     const slug = leetcodeSlug(pr.name);
+                    const day = schedule?.get(pr.name);
                     return (
                       <div key={pr.name} ref={n => { if (isSel) selRef.current = n; }}>
                         <div className="flex items-center gap-1.5 min-w-0">
@@ -120,6 +149,7 @@ const GoogleSidebar = React.memo(function GoogleSidebar({
                           <button onClick={() => onSelect(pr.name)} className={clsx('gp-side-item', isSel && 'gp-side-item-active')}>
                             <span className="flex-1 min-w-0 truncate">{pr.name}</span>
                             {pr.design && <span className="gp-chip gp-chip-xs gp-chip-purple">design</span>}
+                            {day && <span className={clsx('text-[10.5px] font-normal tabular-nums shrink-0', bonus?.has(pr.name) ? 'gp-t3 opacity-70' : 'gp-t3')} title={`Plan: day ${day.day + 1} · ${fmtDate(day.date)}${bonus?.has(pr.name) ? ' · bonus' : ''}`}>{shortDate(day.date)}</span>}
                             <span className={clsx('gp-diff', `gp-diff-${pr.difficulty}`)}>{pr.difficulty[0].toUpperCase()}</span>
                           </button>
                         </div>

@@ -2,22 +2,24 @@
 
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import { GripVertical, GripHorizontal, Timer as TimerIcon, Flag, Play, Pause, MessageSquare, Lightbulb, Gauge, HelpCircle, Menu } from 'lucide-react';
+import { GripVertical, GripHorizontal, Timer as TimerIcon, Flag, Play, Pause, MessageSquare, Lightbulb, Gauge, HelpCircle, Menu, GraduationCap, Shuffle, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { toast } from 'sonner';
 import { trackGoogle } from '@/lib/google/track';
 import EditorPanel from '@/components/forge/editor/EditorPanel';
 import GoogleSidebar, { pickUnseen } from './GoogleSidebar';
 import TriggerDrill from './TriggerDrill';
+import TheoryView from './TheoryView';
 import type { QuickAction } from '../shared/GoogleChatPanel';
 import type { AssistantHandle } from '../shared/useAssistant';
 import { useTimer, fmtClock } from '../shared/useTimer';
 import type { GoogleStore } from '../useGoogleStore';
 import type { AIProvider, Language } from '@/lib/types';
-import { GOOGLE_PROBLEMS, GOOGLE_SECTION_OF, GOOGLE_SECTIONS } from '@/lib/google/problems';
+import { GOOGLE_PROBLEMS, GOOGLE_SECTION_OF, GOOGLE_SECTIONS, sectionById } from '@/lib/google/problems';
 import { getGoogleStarterCode } from '@/lib/google/starter';
 import { runGoogleCode } from '@/lib/google/runner';
-import { buildGoogleCoachPrompt, buildCodingInterviewerPrompt, parseGrade, stripGradeBlock } from '@/lib/google/ai';
+import { buildGoogleCoachPrompt, buildCodingInterviewerPrompt, buildTheoryCoachPrompt, parseGrade, stripGradeBlock } from '@/lib/google/ai';
+import { theoryFor } from '@/lib/google/theory';
 import { getIntervalDays, isDueForRevision } from '@/lib/revision';
 import { planFor, problemSchedule, bonusProblems } from '@/lib/google/plan';
 
@@ -39,14 +41,15 @@ interface Props {
   onOpenSettings: () => void;
   /** The shared assistant — this tab registers the Coach (or the Interviewer in a mock) */
   ai: AssistantHandle;
-  focus?: { n: number; section?: string; problem?: string; drill?: boolean };
+  focus?: { n: number; section?: string; problem?: string; drill?: boolean; theory?: boolean };
   mock?: MockHandlers;
   /** Current plan week — bounds the pattern-trigger drill to patterns studied so far */
   planWeek?: number;
 }
 
 const LANGS: Language[] = ['javascript', 'python', 'java', 'cpp'];
-const DEFAULT_PROBLEM = GOOGLE_SECTIONS[0].problems[0].name;
+/** With nothing remembered, open on the first problem the plan schedules (week 1, Monday). */
+const firstOnPlan = (planStart: string) => problemSchedule(planFor(planStart)).keys().next().value ?? GOOGLE_SECTIONS[1].problems[0].name;
 
 const COACH_ACTIONS: QuickAction[] = [
   { label: 'Review code', icon: MessageSquare, msg: 'Review my current code: what is right, what breaks and on which input, and the next step — conceptually, no solution code.' },
@@ -57,21 +60,31 @@ const COACH_ACTIONS: QuickAction[] = [
 const MOCK_ACTIONS: QuickAction[] = [
   { label: 'Clarify', icon: HelpCircle, msg: 'Before I start: what are the constraints on input size and values, and can I assume the input fits in memory?' },
 ];
+const THEORY_ACTIONS: QuickAction[] = [
+  { label: 'Quiz me', icon: GraduationCap, msg: 'Quiz me on this pattern: three short questions, one at a time — the trigger condition, the code shape, and "which sub-pattern does this problem want". Wait for each answer, then grade it and correct me.' },
+  { label: 'Explain simply', icon: Lightbulb, msg: 'Explain the core idea of this pattern as if I am hearing it for the first time, with one tiny worked example — then the one sentence I should say out loud when I recognise it.' },
+  { label: 'Where it breaks', icon: AlertTriangle, msg: 'What are the classic mistakes and edge cases with this pattern in interviews, and how do I avoid each one?' },
+  { label: 'Look-alikes', icon: Shuffle, msg: 'Which patterns get confused with this one? Give me the tell-tale differences so I pick the right one in the first minute.' },
+];
 
 export default function GoogleDSA({ theme, onToggleTheme, store, orientation, editorFontSize, editorFontFamily, onOpenSettings, ai, focus, mock, planWeek }: Props) {
   const s = store.state;
   const isMock = !!mock;
 
-  // ── Selection ──
-  const [selected, setSelected] = useState<string>(() => mock?.problem ?? DEFAULT_PROBLEM);
-  useEffect(() => {
-    if (isMock) return;
-    try {
-      const saved = localStorage.getItem('dsa-forge-google-problem');
-      if (saved && GOOGLE_PROBLEMS[saved]) setSelected(saved);
-    } catch { /* ignore */ }
-  }, [isMock]);
-  useEffect(() => { if (!isMock) try { localStorage.setItem('dsa-forge-google-problem', selected); } catch { /* ignore */ } }, [selected, isMock]);
+  // ── Selection: a problem, or a section's pattern notes in its place ──
+  // Remembered in localStorage. Read in the initialisers (this tab only mounts on the
+  // client, after the first paint), so the remembering effect below never races the load.
+  const [selected, setSelected] = useState<string>(() => {
+    if (mock) return mock.problem;
+    try { const saved = localStorage.getItem('dsa-forge-google-problem'); if (saved && GOOGLE_PROBLEMS[saved]) return saved; } catch { /* ignore */ }
+    return firstOnPlan(s.planStart);
+  });
+  const [theorySection, setTheorySection] = useState<string | null>(() => {
+    if (isMock) return null;
+    try { const th = localStorage.getItem('dsa-forge-google-theory'); if (th && sectionById(th)) return th; } catch { /* ignore */ }
+    return null;
+  });
+  useEffect(() => { if (!isMock) try { localStorage.setItem('dsa-forge-google-problem', selected); localStorage.setItem('dsa-forge-google-theory', theorySection ?? ''); } catch { /* ignore */ } }, [selected, theorySection, isMock]);
 
   const language = s.language;
   const codeKey = `${selected}-${language}`;
@@ -101,6 +114,11 @@ export default function GoogleDSA({ theme, onToggleTheme, store, orientation, ed
   }, [s, selected, language, isMock]);
   const section = GOOGLE_SECTION_OF[selected];
   const info = GOOGLE_PROBLEMS[selected];
+  const theorySec = !isMock && theorySection ? sectionById(theorySection) : undefined;
+  const buildTheorySystem = useCallback(() => {
+    const sec = theorySection ? sectionById(theorySection) : undefined;
+    return sec ? buildTheoryCoachPrompt(sec, s.theory[sec.id] ?? theoryFor(sec)) : '';
+  }, [s, theorySection]);
   const uid = useId(); // a fresh scope per mock round
   useEffect(() => {
     ai.register(isMock ? {
@@ -112,6 +130,15 @@ export default function GoogleDSA({ theme, onToggleTheme, store, orientation, ed
       quickActions: MOCK_ACTIONS,
       placeholder: 'Talk to the interviewer… (Enter to send, Shift+Enter for a new line)',
       clearable: false,
+    } : theorySec ? {
+      scope: `theory:${theorySec.id}`,
+      title: 'Coach',
+      subtitle: `${theorySec.title} — pattern notes: ask, quiz, examples`,
+      greeting: `**${theorySec.title}** — the notes are open. 📖 Read them once, then use the buttons: I can quiz you, explain any part with a tiny example, or list where this pattern breaks.`,
+      buildSystem: buildTheorySystem,
+      quickActions: THEORY_ACTIONS,
+      placeholder: 'Ask about this pattern — the notes are attached automatically… (Enter to send)',
+      clearable: true,
     } : {
       scope: `dsa:${selected}`,
       title: 'Coach',
@@ -123,18 +150,19 @@ export default function GoogleDSA({ theme, onToggleTheme, store, orientation, ed
       clearable: true,
     });
     return () => ai.register(null);
-  }, [ai, isMock, selected, buildSystem, section?.title, info, uid]);
+  }, [ai, isMock, selected, buildSystem, buildTheorySystem, section?.title, info, uid, theorySec]);
   useEffect(() => { if (isMock) ai.open(); }, [isMock, ai]); // a mock round IS the conversation
 
-  // Deep link to a specific problem (from Today / Plan)
+  // Deep link to a problem, or to a section's pattern notes (from Today / Plan)
   const [drillOpen, setDrillOpen] = useState(false);
   const [prevFocusN, setPrevFocusN] = useState(focus?.n ?? 0);
   if (!isMock && focus && focus.n !== prevFocusN) {
     setPrevFocusN(focus.n);
-    if (focus.problem && GOOGLE_PROBLEMS[focus.problem] && focus.problem !== selected) {
-      setSelected(focus.problem);
-      setOutput(null);
-      setShowNotes(false);
+    if (focus.theory && focus.section && sectionById(focus.section)) {
+      setTheorySection(focus.section);
+    } else if (focus.problem && GOOGLE_PROBLEMS[focus.problem]) {
+      if (focus.problem !== selected) { setSelected(focus.problem); setOutput(null); setShowNotes(false); }
+      setTheorySection(null);
     }
     if (focus.drill) setDrillOpen(true);
   }
@@ -143,9 +171,11 @@ export default function GoogleDSA({ theme, onToggleTheme, store, orientation, ed
   const handleSelect = useCallback((p: string) => {
     if (!GOOGLE_PROBLEMS[p]) return;
     setSelected(p);
+    setTheorySection(null);
     setOutput(null);
     setShowNotes(false);
   }, []);
+  const handleSelectTheory = useCallback((id: string) => { if (sectionById(id)) setTheorySection(id); }, []);
 
   // ── Mastered / revised (same ladder as the Forge: 7 → 14 → 30) ──
   const handleToggleMastered = useCallback((p: string) => {
@@ -242,6 +272,7 @@ export default function GoogleDSA({ theme, onToggleTheme, store, orientation, ed
               <Panel id="g-side" defaultSize="24%" minSize="220px" maxSize="40%" className="min-w-0 min-h-0 overflow-hidden">
                 <GoogleSidebar
                   selectedProblem={selected}
+                  theorySection={theorySection}
                   schedule={schedule}
                   bonus={bonus}
                   mastered={s.mastered}
@@ -249,6 +280,7 @@ export default function GoogleDSA({ theme, onToggleTheme, store, orientation, ed
                   reviewCount={s.reviewCount}
                   focus={focus}
                   onSelect={handleSelect}
+                  onSelectTheory={handleSelectTheory}
                   onToggleMastered={handleToggleMastered}
                   onDrill={() => setDrillOpen(true)}
                   onMarkRevised={handleMarkRevised}
@@ -261,6 +293,9 @@ export default function GoogleDSA({ theme, onToggleTheme, store, orientation, ed
           )}
 
           <Panel id="g-editor" minSize="30%" className="min-w-0 min-h-0 overflow-hidden">
+            {theorySec ? (
+              <TheoryView theme={theme} section={theorySec} store={store} schedule={schedule} bonus={bonus} onOpenProblem={handleSelect} />
+            ) : (
             <EditorPanel
               theme={theme}
               onToggleTheme={onToggleTheme}
@@ -291,12 +326,13 @@ export default function GoogleDSA({ theme, onToggleTheme, store, orientation, ed
               onToggleRightPanel={ai.toggle}
               minimal
             />
+            )}
           </Panel>
 
         </PanelGroup>
       </div>
       {!showLeft && !isMock && (
-        <button onClick={() => setShowLeft(true)} className="absolute bottom-4 left-4 gp-btn gp-btn-icon lg:hidden" title="Open problems"><Menu size={16} /></button>
+        <button onClick={() => setShowLeft(true)} className={clsx('absolute bottom-4 left-4 gp-btn gp-btn-icon', !theorySec && 'lg:hidden')} title="Open problems"><Menu size={16} /></button>
       )}
       {drillOpen && !isMock && (
         <TriggerDrill store={store} planWeek={planWeek ?? 4} onClose={() => setDrillOpen(false)} onOpenProblem={name => handleSelect(name)} />

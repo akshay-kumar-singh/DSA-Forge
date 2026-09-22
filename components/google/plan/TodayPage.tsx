@@ -55,7 +55,7 @@ export default function TodayPage({ store, plan, status, onTab, onAsk }: Props) 
   const aheadDays = curDone && next ? next.day - cur.day : 0;
   const curWeek = PLAN_WEEKS[cur?.week ?? 0];
   const phase = phaseOf(cur?.week ?? 0);
-  const behindDays = status.started ? Math.max(0, Math.min(status.calendarDay, status.totalDays - 1) - status.currentDay) : 0;
+  const behindDays = status.started ? Math.max(0, -status.delta) : 0; // same measure as the header chip
 
   const due = getDueProblems(s.lastReviewDate, s.reviewCount, s.mastered);
   const weekSection = curWeek?.sections[0] ? sectionById(curWeek.sections[0]) : undefined;
