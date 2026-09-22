@@ -205,7 +205,7 @@ export const PLAN_WEEKS: PlanWeek[] = [
       { day: 5, kind: 'admin', text: 'Loop-day checklist (roadmap §6) — run through it the night before every onsite.', items: [
         { label: 'Sleep 8 hours; no new material after 6 pm' },
         { label: 'Morning: two easy warm-ups from the toolkit, out loud, 10 minutes each', link: { tab: 'dsa', section: 'toolkit' } },
-        { label: 'Reread your notes for the 16 patterns — trigger lines only, not solutions', link: { tab: 'dsa' } },
+        { label: 'Reread your notes for the 16 patterns — trigger lines only, not solutions', link: { tab: 'dsa', section: 'arrays', theory: true } },
         { label: 'Reread the 12 STAR stories once; say the two weakest aloud', link: { tab: 'behavioural' } },
         { label: 'Three questions ready for each interviewer (team, on-call, how L3s grow)' },
         { label: 'Environment: camera, mic, quiet room, water, shared doc / editor tested' },
@@ -439,12 +439,12 @@ function weekTemplate(week: PlanWeek, weekIdx: number, dayInWeek: number, alloc:
   const template = WEEK_TEMPLATE[weekIdx];
   if (dayInWeek <= 4) {
     if (dayInWeek === 0) {
-      tasks.push({ ...base, id: id('theory'), kind: 'theory', sectionId: sec, text: `Theory (1 hr) — ${week.theme}: pattern notes, the trigger condition, the shape of the code.`, link: { tab: 'dsa', section: sec } });
+      tasks.push({ ...base, id: id('theory'), kind: 'theory', sectionId: sec, text: `Theory (1 hr) — ${week.theme}: read the pattern notes, then rewrite the trigger condition and the code shape in your own words.`, link: { tab: 'dsa', section: sec, theory: true } });
       if (template) {
         tasks.push({ ...base, id: id('tmpl'), kind: 'template', sectionId: 'toolkit', items: [toolkitItem(template, GOOGLE_PROBLEMS[template]?.note?.split('. ')[0] ?? '')], text: `This week's template — write ${template.replace('Template: ', '')} in the Toolkit section, then use it in every problem this week.`, link: { tab: 'dsa', section: 'toolkit', problem: template } });
       }
     } else {
-      tasks.push({ ...base, id: id('theory'), kind: 'theory', sectionId: sec, text: 'Recap (15 min) — say the trigger condition out loud and sketch the code shape before the first problem.', link: { tab: 'dsa', section: sec } });
+      tasks.push({ ...base, id: id('theory'), kind: 'theory', sectionId: sec, text: 'Recap (15 min) — say the trigger condition out loud and sketch the code shape before the first problem.', link: { tab: 'dsa', section: sec, theory: true } });
     }
     const items = [...freshOrAgain(alloc, sec, PER_DAY), ...(sec ? alloc.bonus(sec) : [])].slice(0, PER_DAY + BONUS_PER_DAY);
     const hasBonus = items.some(i => i.optional);

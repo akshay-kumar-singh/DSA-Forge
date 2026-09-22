@@ -219,3 +219,33 @@
 @media (max-width: 1023px) {
   .gp-assistant { position: absolute; inset: 0 0 0 auto; width: min(420px, 100%); z-index: 40; box-shadow: -12px 0 32px rgba(0, 0, 0, 0.25); }
 }
+
+/* ── Pattern notes: long-form markdown (theory) ── */
+.gp-prose { color: var(--gp-text); font-size: 14.5px; line-height: 1.7; }
+.gp-prose > :first-child { margin-top: 0; }
+.gp-prose h1 { font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin: 0 0 12px; }
+.gp-prose h2 { font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.01em; margin: 36px 0 10px; padding-top: 18px; border-top: 1px solid var(--gp-border); }
+.gp-prose h3 { font-size: 15.5px; font-weight: 700; margin: 24px 0 6px; }
+.gp-prose h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 4px; color: var(--gp-text-2); }
+.gp-prose p { margin: 8px 0; }
+.gp-prose ul, .gp-prose ol { padding-left: 1.5em; margin: 8px 0; }
+.gp-prose li { margin: 3px 0; }
+.gp-prose li > p { margin: 2px 0; }
+.gp-prose strong { font-weight: 700; color: var(--gp-text); }
+.gp-prose em { color: var(--gp-text-2); }
+.gp-prose a { color: var(--gp-blue); text-decoration: underline; text-underline-offset: 2px; }
+.gp-prose code { font-family: var(--font-mono); font-size: 0.86em; background: var(--gp-blue-wash); color: var(--gp-blue); padding: 1px 5px; border-radius: 5px; }
+.gp-prose pre { background: var(--gp-surface-2); border: 1px solid var(--gp-border); border-radius: 10px; padding: 12px 14px; overflow-x: auto; margin: 10px 0; font-size: 12.5px; line-height: 1.55; }
+.gp-prose pre code { background: transparent; color: var(--gp-text); padding: 0; font-size: inherit; }
+.gp-prose blockquote { margin: 12px 0; padding: 8px 14px; border-left: 3px solid var(--gp-blue); background: var(--gp-blue-wash); border-radius: 0 10px 10px 0; color: var(--gp-text); }
+.gp-prose blockquote p { margin: 2px 0; }
+.gp-prose hr { border: 0; border-top: 1px solid var(--gp-border); margin: 20px 0; }
+.gp-prose table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; display: block; overflow-x: auto; }
+.gp-prose th, .gp-prose td { border: 1px solid var(--gp-border); padding: 6px 10px; text-align: left; vertical-align: top; }
+.gp-prose th { background: var(--gp-surface-2); font-weight: 700; color: var(--gp-text-2); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.gp-prose input[type='checkbox'] { margin-right: 6px; accent-color: var(--gp-blue); }
+.gp-prose .mermaid-wrap { background: var(--gp-surface-2); border-color: var(--gp-border); border-radius: 10px; }
+.gp-prose .mermaid-wrap svg { max-width: 100%; height: auto; }
+
+/* Pattern-notes editor: markdown source next to the live preview */
+.gp-md-editor { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; tab-size: 2; resize: none; }

@@ -25,7 +25,7 @@ export function resolveTaskItems(task: PlanTask, state: GoogleState): TaskItem[]
     case 'theory': {
       const sec = task.sectionId ? sectionById(task.sectionId) : undefined;
       if (!sec) return [];
-      return [{ label: `Pattern: ${sec.title}`, sub: `Reach for it when: ${sec.trigger}`, link: { tab: 'dsa', section: sec.id } }];
+      return [{ label: `Pattern notes: ${sec.title}`, sub: `Reach for it when: ${sec.trigger}`, link: { tab: 'dsa', section: sec.id, theory: true } }];
     }
     case 'revise': {
       const due = getDueProblems(state.lastReviewDate, state.reviewCount, state.mastered).slice(0, task.count ?? 1);

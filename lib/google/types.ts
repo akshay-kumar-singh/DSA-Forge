@@ -117,6 +117,7 @@ export interface DeepLink {
   id?: string;           // design prompt id / story id / 'outreach' on the plan tab
   kind?: MockKind;       // mocks tab: preselect a round
   drill?: boolean;       // dsa tab: open the pattern-trigger drill
+  theory?: boolean;      // dsa tab: open the section's pattern notes instead of a problem
 }
 
 export type TaskKind = 'theory' | 'solve' | 'revise' | 'timed' | 'drill' | 'template' | 'admin' | 'design' | 'behavioural' | 'mock' | 'outreach' | 'apply' | 'special' | 'rest';
@@ -209,6 +210,8 @@ export interface GoogleState {
   contacts: Contact[];                     // referral map
   applications: Application[];
   notebook: NotebookNote[];                // the Notes tab
+  theory: Record<string, string>;          // section id → pattern notes as the user rewrote them (absent = the built-in notes)
+  sketches: Record<string, string>;        // section id → excalidraw scene drawn under the pattern notes
 }
 
 export const EMPTY_GOOGLE_STATE: GoogleState = {
@@ -229,4 +232,6 @@ export const EMPTY_GOOGLE_STATE: GoogleState = {
   contacts: [],
   applications: [],
   notebook: [],
+  theory: {},
+  sketches: {},
 };
