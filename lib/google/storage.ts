@@ -32,6 +32,7 @@ export function normalise(raw: unknown): GoogleState {
     contacts: Array.isArray(r.contacts) ? r.contacts : [],
     applications: Array.isArray(r.applications) ? r.applications : [],
     notebook: Array.isArray(r.notebook) ? r.notebook : [],
+    comprehension: r.comprehension ?? {},
     theory: r.theory ?? {},
     sketches: r.sketches ?? {},
   };

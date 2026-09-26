@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
-import { Sun, Moon, Settings, Save, Loader2, CalendarDays, Code2, Network, Users, Timer, ListChecks, ArrowLeft, Cloud, CloudOff, Target, NotebookPen, Sparkles } from 'lucide-react';
+import { Sun, Moon, Settings, Save, Loader2, CalendarDays, Code2, Network, Users, Timer, ListChecks, ArrowLeft, Cloud, CloudOff, Target, NotebookPen, Sparkles, FileSearch } from 'lucide-react';
 import type { GoogleTab } from '@/lib/google/types';
 import type { PlanStatus } from '@/lib/google/plan';
 
@@ -13,6 +13,7 @@ const NAV: { id: GoogleTab; label: string; icon: React.ComponentType<{ size?: nu
   { id: 'design', label: 'System Design', icon: Network },
   { id: 'behavioural', label: 'Behavioural', icon: Users },
   { id: 'mocks', label: 'Mocks', icon: Timer },
+  { id: 'comprehension', label: 'Comprehension', icon: FileSearch },
   { id: 'plan', label: 'Plan', icon: ListChecks },
   { id: 'notes', label: 'Notes', icon: NotebookPen },
 ];
@@ -42,44 +43,55 @@ export default function GoogleShell({ theme, onToggleTheme, tab, onTab, status, 
   return (
     <div className="gp h-screen w-full flex flex-col overflow-hidden">
       <header className="h-14 shrink-0 border-b gp-border gp-panel flex items-center gap-2 px-3 md:px-4">
-        <Link href="/" className="gp-btn gp-btn-ghost gp-btn-sm gp-t3 -ml-1" title="Back to DSA Forge">
+        <Link href="/" className="gp-btn gp-btn-ghost gp-btn-sm gp-t3 -ml-1 shrink-0" title="Back to DSA Forge">
           <ArrowLeft size={14} /><span className="hidden md:inline">Forge</span>
         </Link>
-        <div className="flex items-center gap-2 pl-2 border-l gp-border">
+        <div className="flex items-center gap-2 pl-2 border-l gp-border shrink-0">
           <Target size={16} className="gp-blue shrink-0" aria-hidden />
-          <span className="gp-display text-[15px] font-bold gp-t1 hidden sm:inline">Interview Prep</span>
+          <span className="gp-display text-[15px] font-bold gp-t1 whitespace-nowrap hidden lg:inline">Interview Prep</span>
         </div>
 
-        <nav className="flex items-center gap-1 ml-3 overflow-x-auto min-w-0" aria-label="Interview prep sections">
-          {NAV.map(({ id, label, icon: Icon }) => (
-            <button key={id} onClick={() => onTab(id)} className={clsx('gp-tab', tab === id && 'gp-tab-active')} aria-current={tab === id ? 'page' : undefined}>
-              <Icon size={14} />
-              <span className="hidden lg:inline">{label}</span>
-            </button>
-          ))}
+        {/* Only the tab you are on spells itself out — eight labels never fit, and
+            eight anonymous icons lose you. Everything keeps a tooltip. */}
+        <nav className="flex items-center gap-0.5 ml-2 min-w-0 gp-scroll-x" aria-label="Interview prep sections">
+          {NAV.map(({ id, label, icon: Icon }) => {
+            const active = tab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => onTab(id)}
+                className={clsx('gp-tab shrink-0', active && 'gp-tab-active')}
+                aria-current={active ? 'page' : undefined}
+                aria-label={label}
+                title={label}
+              >
+                <Icon size={15} />
+                <span className="gp-tab-label">{label}</span>
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 shrink-0">
-          <div className="hidden md:flex items-center gap-2 pr-2 border-r gp-border">
-            <span className="gp-num text-base gp-blue">{status.daysLeft}</span>
-            <span className="text-xs gp-t3">days left</span>
+        <div className="ml-auto flex items-center gap-1.5 shrink-0 pl-2">
+          <div className="hidden md:flex items-center gap-1.5 pr-1.5 mr-0.5 border-r gp-border" title={`${status.daysLeft} plan days left · ${deltaText}`}>
+            <span className="gp-num text-[15px] gp-blue">{status.daysLeft}d</span>
             <span className={clsx('gp-chip gp-chip-xs', deltaCls)}>{deltaText}</span>
           </div>
           <span className="gp-t3" title={cloudOk === false ? 'Cloud sync unavailable — saved in this browser' : cloudOk ? 'Cloud sync on' : 'Checking cloud…'}>
             {cloudOk === false ? <CloudOff size={15} className="gp-yellow" /> : <Cloud size={15} className={cloudOk ? 'gp-green' : ''} />}
           </span>
-          <button onClick={onSave} disabled={isSaving} className={clsx('gp-btn gp-btn-sm', isSaving && 'gp-btn-active')} title="Save now (autosaves every minute)">
+          <button onClick={onSave} disabled={isSaving} className={clsx('gp-btn gp-btn-sm shrink-0', isSaving && 'gp-btn-active')} title="Save now (autosaves every minute)">
             {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-            <span className="hidden xl:inline">{isSaving ? 'Saved' : 'Save'}</span>
+            <span className="hidden 2xl:inline">{isSaving ? 'Saved' : 'Save'}</span>
           </button>
-          <button onClick={onToggleAssistant} className={clsx('gp-btn gp-btn-sm', assistantOpen ? 'gp-btn-primary' : '')} title={`${assistantOpen ? 'Hide' : 'Show'} the assistant — ${assistantTitle} on this tab`} aria-pressed={assistantOpen}>
+          <button onClick={onToggleAssistant} className={clsx('gp-btn gp-btn-sm shrink-0', assistantOpen && 'gp-btn-primary')} title={`${assistantOpen ? 'Hide' : 'Show'} the assistant — ${assistantTitle} on this tab`} aria-pressed={assistantOpen}>
             <Sparkles size={14} />
-            <span className="hidden lg:inline">{assistantTitle}</span>
+            <span className="hidden xl:inline">{assistantTitle}</span>
           </button>
-          <button onClick={onToggleTheme} className="gp-btn gp-btn-sm gp-btn-icon" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
+          <button onClick={onToggleTheme} className="gp-btn gp-btn-sm gp-btn-icon shrink-0" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
             {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
           </button>
-          <button onClick={onOpenSettings} className="gp-btn gp-btn-sm gp-btn-icon" title="AI & editor settings">
+          <button onClick={onOpenSettings} className="gp-btn gp-btn-sm gp-btn-icon shrink-0" title="AI & editor settings">
             <Settings size={14} />
           </button>
         </div>

@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { Zap, Target, Shield, ChevronRight, Sun, Moon, Flame, Clock, Code2, Network, Users, Timer } from 'lucide-react';
+import { Zap, Target, Shield, ChevronRight, Sun, Moon, Flame, Clock, Code2, Network, Users, Timer, FlaskConical } from 'lucide-react';
 import { useGoogleSummary } from '@/components/google/useGoogleSummary';
 import { planFor, computePlanStatus, EMPTY_START } from '@/lib/google/plan';
 import { GOOGLE_TOTAL } from '@/lib/google/problems';
+import { DSA_PATTERNS } from '@/lib/problems';
+import { useIsHydrated } from '@/lib/use-hydrated';
 
 const ThreeBackground = dynamic(() => import('./ThreeBackground'), { ssr: false });
 
@@ -18,7 +21,7 @@ interface LandingPageProps {
 
 export default function LandingPage({ theme, onToggleTheme, masteredCount, totalProblems, onEnter }: LandingPageProps) {
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto bg-bg-base flex flex-col items-center justify-center tech-grid py-16">
+    <div className="landing-shell relative min-h-screen w-full overflow-x-hidden overflow-y-auto bg-bg-base flex flex-col items-center justify-center tech-grid">
       {/* Three.js animated background */}
       <ThreeBackground active />
 
@@ -46,10 +49,10 @@ export default function LandingPage({ theme, onToggleTheme, masteredCount, total
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: 'easeOut' }}
-        className="relative z-20 flex flex-col items-center text-center px-6 max-w-5xl w-full space-y-8"
+        className="landing-stack relative z-20 flex flex-col items-center text-center px-6 max-w-5xl w-full"
       >
-        {/* Badge */}
-        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30">
+        {/* Badge — the first thing dropped when the screen is short */}
+        <div className="landing-badge items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30">
           <Shield size={12} className="text-blue-400" />
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">
             S.H.I.E.L.D. Training Facility
@@ -57,8 +60,8 @@ export default function LandingPage({ theme, onToggleTheme, masteredCount, total
         </div>
 
         {/* Title */}
-        <div className="space-y-2">
-          <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none">
+        <div className="space-y-1.5">
+          <h1 className="landing-title font-black uppercase tracking-tighter leading-none">
             <span className="text-text-primary">DSA </span>
             <span
               className="text-transparent"
@@ -67,13 +70,13 @@ export default function LandingPage({ theme, onToggleTheme, masteredCount, total
               FORGE
             </span>
           </h1>
-          <p className="text-base font-medium text-text-secondary tracking-wide">
+          <p className="landing-tagline font-medium text-text-secondary tracking-wide">
             Your Personal Training Facility. No Answers. Only Growth.
           </p>
         </div>
 
-        {/* Feature pills */}
-        <div className="flex flex-wrap justify-center gap-3">
+        {/* Feature pills — hidden on short screens so the cards always fit */}
+        <div className="landing-pills flex-wrap justify-center gap-3">
           {[
             { icon: Zap,    label: 'Forge Mode — Always On' },
             { icon: Target, label: 'AI-Guided, Never Spoiled' },
@@ -89,10 +92,13 @@ export default function LandingPage({ theme, onToggleTheme, masteredCount, total
           ))}
         </div>
 
-        {/* Two tracks */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full text-left pt-2">
+        {/* Tracks */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full text-left">
           <NeetCodeCard masteredCount={masteredCount} totalProblems={totalProblems} onEnter={onEnter} />
           <GoogleCard />
+        </div>
+        <div className="w-full text-left">
+          <PracticeCard />
         </div>
 
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">Choose a track · progress is saved separately for each</p>
@@ -107,7 +113,7 @@ export default function LandingPage({ theme, onToggleTheme, masteredCount, total
   );
 }
 
-const cardClass = 'group relative w-full flex flex-col rounded-2xl border border-border-default bg-bg-surface/85 backdrop-blur-md p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-500/50 hover:shadow-[0_0_0_1px_rgba(59,130,246,0.25),0_16px_40px_rgba(59,130,246,0.15)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500';
+const cardClass = 'group relative w-full flex flex-col rounded-2xl border border-border-default bg-bg-surface/85 backdrop-blur-md p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-500/50 hover:shadow-[0_0_0_1px_rgba(59,130,246,0.25),0_16px_40px_rgba(59,130,246,0.15)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500';
 
 function NeetCodeCard({ masteredCount, totalProblems, onEnter }: { masteredCount: number; totalProblems: number; onEnter: () => void }) {
   const pct = Math.min((masteredCount / Math.max(totalProblems, 1)) * 100, 100);
@@ -124,21 +130,30 @@ function NeetCodeCard({ masteredCount, totalProblems, onEnter }: { masteredCount
         </div>
         <span className="text-[10px] font-black tracking-widest text-blue-400 px-2 py-1 rounded bg-blue-500/10 border border-blue-500/20">{rank}</span>
       </div>
-      <p className="text-[13px] text-text-secondary mt-4">Missions by pattern, a Socratic coach that never spoils, and a 7 → 14 → 30-day revision ladder.</p>
+      <p className="text-[13px] text-text-secondary mt-3">Missions by pattern, with a Socratic coach that never spoils the answer.</p>
 
-      <div className="mt-5 flex items-end gap-2">
+      <div className="mt-4 flex items-end gap-2">
         <span className="text-4xl font-black text-text-primary leading-none">{masteredCount}</span>
         <span className="text-sm font-bold text-text-muted mb-0.5">/ {totalProblems} mastered</span>
       </div>
-      <div className="mt-3 w-full h-1.5 bg-bg-base rounded-full overflow-hidden border border-border-subtle">
+      <div className="mt-2.5 w-full h-1.5 bg-bg-base rounded-full overflow-hidden border border-border-subtle">
         <div className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full" style={{ width: `${pct}%` }} />
       </div>
 
-      <div className="mt-5 flex items-center justify-between">
-        <div className="flex gap-4 text-[11px] font-bold text-text-muted">
-          <span className="flex items-center gap-1"><Code2 size={12} className="text-blue-400" />18 divisions</span>
-          <span className="flex items-center gap-1"><Clock size={12} className="text-blue-400" />Spaced repetition</span>
-        </div>
+      {/* Same tile row as the Prep card, so the two cards read as a pair */}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {[
+          { icon: Code2, label: 'Divisions', value: `${DSA_PATTERNS.length}` },
+          { icon: Clock, label: 'Revision', value: '7 → 14 → 30 days' },
+        ].map(({ icon: Icon, label, value }) => (
+          <div key={label} className="rounded-lg bg-bg-base/70 border border-border-subtle px-2 py-1.5">
+            <div className="text-[9px] font-bold uppercase tracking-wider text-text-muted flex items-center gap-1"><Icon size={10} className="text-blue-400" />{label}</div>
+            <div className="text-[13px] font-black text-text-primary">{value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-auto pt-3.5 flex items-center justify-end">
         <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-blue-400">Enter Forge <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" /></span>
       </div>
     </motion.button>
@@ -167,17 +182,17 @@ function GoogleCard() {
         </div>
         <span className={`text-[10px] font-black tracking-widest px-2 py-1 rounded border ${statusColor}`}>{status}</span>
       </div>
-      <p className="text-[13px] text-text-secondary mt-4">{`The 26-week roadmap as a daily plan: ${g?.totalProblems ?? GOOGLE_TOTAL} problems by pattern, system design on a whiteboard, STAR stories, graded mocks.`}</p>
+      <p className="text-[13px] text-text-secondary mt-3">{`The 26-week roadmap as a daily plan: ${g?.totalProblems ?? GOOGLE_TOTAL} problems by pattern, system design on a whiteboard, STAR stories, graded mocks.`}</p>
 
-      <div className="mt-5 flex items-end gap-2">
+      <div className="mt-4 flex items-end gap-2">
         <span className="text-4xl font-black text-text-primary leading-none">{daysLeft}</span>
         <span className="text-sm font-bold text-text-muted mb-0.5">days left · ready by {readyBy}</span>
       </div>
-      <div className="mt-3 w-full h-1.5 bg-bg-base rounded-full overflow-hidden border border-border-subtle">
+      <div className="mt-2.5 w-full h-1.5 bg-bg-base rounded-full overflow-hidden border border-border-subtle">
         <div className="h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full" style={{ width: `${(g?.pct ?? 0) * 100}%` }} />
       </div>
 
-      <div className="mt-5 grid grid-cols-4 gap-2">
+      <div className="mt-3 grid grid-cols-4 gap-2">
         {[
           { icon: Code2, label: 'DSA', value: `${g?.mastered ?? 0}/${g?.totalProblems ?? GOOGLE_TOTAL}` },
           { icon: Network, label: 'Designs', value: `${g?.designs ?? 0}/${g?.totalDesigns ?? 21}` },
@@ -191,9 +206,51 @@ function GoogleCard() {
         ))}
       </div>
 
-      <div className="mt-5 flex items-center justify-end">
+      <div className="mt-auto pt-3.5 flex items-center justify-end">
         <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-green-400">Open Interview Prep <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" /></span>
       </div>
+    </Link>
+  );
+}
+
+/** Track 03 — the user's own problems and designs. Counts come from the same
+ *  localStorage mirror the Practice Lab writes, so the card works offline too. */
+function PracticeCard() {
+  // Read once on the first client render (never during SSR), so no effect has to setState.
+  const isHydrated = useIsHydrated();
+  const [counts, setCounts] = useState<{ problems: number; designs: number } | null>(null);
+  if (isHydrated && !counts) {
+    try {
+      const raw = localStorage.getItem('dsa-forge-practice-v1');
+      const s = raw ? JSON.parse(raw) : null;
+      setCounts({ problems: s?.problems?.length ?? 0, designs: s?.designs?.length ?? 0 });
+    } catch { setCounts({ problems: 0, designs: 0 }); }
+  }
+  return (
+    <Link href="/practice" className={`${cardClass} !py-3.5 !flex-row items-center gap-4`}>
+      <span className="w-11 h-11 shrink-0 rounded-xl bg-purple-500/12 border border-purple-500/30 flex items-center justify-center text-purple-400">
+        <FlaskConical size={20} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-purple-400">Track 03</span>
+          <span className="text-lg font-black uppercase tracking-tight text-text-primary leading-tight">Practice Lab</span>
+        </div>
+        <p className="text-[13px] text-text-secondary mt-1">
+          Your own problems and your own system designs — paste any question, draw any system, keep it all for revision.
+        </p>
+      </div>
+      <div className="hidden sm:flex items-center gap-2 shrink-0">
+        <span className="rounded-lg bg-bg-base/70 border border-border-subtle px-2.5 py-1.5 text-center">
+          <span className="block text-[9px] font-bold uppercase tracking-wider text-text-muted">Problems</span>
+          <span className="block text-[15px] font-black text-text-primary">{counts?.problems ?? 0}</span>
+        </span>
+        <span className="rounded-lg bg-bg-base/70 border border-border-subtle px-2.5 py-1.5 text-center">
+          <span className="block text-[9px] font-bold uppercase tracking-wider text-text-muted">Designs</span>
+          <span className="block text-[15px] font-black text-text-primary">{counts?.designs ?? 0}</span>
+        </span>
+      </div>
+      <ChevronRight size={16} className="shrink-0 text-purple-400 group-hover:translate-x-0.5 transition-transform" />
     </Link>
   );
 }

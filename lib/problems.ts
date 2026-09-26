@@ -6,11 +6,8 @@ import type { DSAPattern, ProblemInfo, Language } from './types';
 // ======================================================
 
 export const DSA_PATTERNS: DSAPattern[] = [
-  {
-    category: "Personal Practice",
-    problems: ["Training: Custom Sandbox"]
-  },
-
+  // Own problems and own designs now live in the Practice Lab at /practice —
+  // the former "Personal Practice" sandbox is gone from this list on purpose.
   {
     category: "Arrays & Hashing",
     problems: [
@@ -449,12 +446,6 @@ export const PROBLEM_DIFFICULTY: Record<string, 'easy' | 'medium' | 'hard'> = {
 // ======================================================
 
 export const PROBLEM_INFO: Record<string, ProblemInfo> = {
-
-  // ── Personal Practice ──────────────────────────────
-  "Training: Custom Sandbox": {
-    params: ["...args"],
-    example: "Practice any logic here — interview prep, custom problems, or recruiter questions."
-  },
 
   // ── Arrays & Hashing ───────────────────────────────
   "Contains Duplicate": {

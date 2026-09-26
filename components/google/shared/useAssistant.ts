@@ -37,7 +37,7 @@ export interface AssistantHandle {
   toggle: () => void;
 }
 
-const ALL_TABS: GoogleTab[] = ['today', 'dsa', 'design', 'behavioural', 'mocks', 'plan', 'notes'];
+const ALL_TABS: GoogleTab[] = ['today', 'dsa', 'design', 'behavioural', 'mocks', 'comprehension', 'plan', 'notes'];
 
 export function useAssistant(provider: AIProvider, model: string, activeTab: GoogleTab, guide: AssistantConfig) {
   const [configs, setConfigs] = useState<Partial<Record<GoogleTab, AssistantConfig>>>({});

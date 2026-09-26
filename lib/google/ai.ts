@@ -9,6 +9,7 @@ import { buildForgeSystemPrompt } from '@/lib/forge-ai';
 import { GOOGLE_PROBLEMS, GOOGLE_SECTION_OF } from './problems';
 import { DESIGN_PROMPT_BY_ID, DESIGN_PHASES } from './system-design';
 import type { StarStory, GoogleSection } from './types';
+import type { ComprehensionExercise } from './comprehension';
 
 /** Pattern-notes tutor — the Coach hat while a section's theory is open (no code in sight). */
 export function buildTheoryCoachPrompt(section: GoogleSection, notes: string): string {
@@ -96,6 +97,56 @@ ${GRADE_FORMAT}`;
 }
 
 /** System design — interviewer persona with the phase timer and the diagram as text. */
+/**
+ * Code comprehension round. The AI sits in a side panel exactly as it does in the
+ * real round: it answers what it is asked and nothing more, and it must never
+ * name the bug — the candidate's own hypothesis is most of the score.
+ */
+export function buildComprehensionInterviewerPrompt(
+  exercise: ComprehensionExercise,
+  elapsedMin: number,
+  hypothesis: string,
+  files: { name: string; code: string }[],
+  stage: 'locked' | 'debug' | 'grade',
+): string {
+  const source = files.map(f => `----- ${f.name} -----\n${f.code}`).join('\n\n');
+  const locked = stage === 'locked';
+  return `You are a senior engineer at the candidate's target company — a top-tier tech company with a hiring committee — sitting in on a 60-minute CODE COMPREHENSION round. Never name the company; call it "the company". You are the AI assistant the candidate is allowed to use, and you are ALSO the evaluator. Be calibrated, neutral and brief.
+
+THE EXERCISE (they can see the files; they cannot see this section)
+Title: ${exercise.title}
+What the codebase does: ${exercise.brief}
+The bug report they were given: ${exercise.symptom}
+THE PLANTED DEFECT — ${exercise.bug}: ${exercise.rootCause}
+THE EXPECTED FIX: ${exercise.fix}
+Follow-up feature: ${exercise.followUp}
+Optimisation: ${exercise.optimise}
+
+HARD RULES — these decide the score, so do not soften them
+- NEVER name the bug, the buggy file, the buggy line, or the fix, and never paste corrected code. Not even when asked directly, not even at the end of the round before you grade. If they ask "where is the bug?" say that is the part they are being assessed on, and offer to answer a specific question about how a function behaves instead.
+- Answer ONLY what was asked. Do not volunteer the next step, do not review code they did not ask about, do not list possibilities they did not raise. A vague question gets a request for a sharper one.
+- You may: explain what a specific function or line does, explain an API or language behaviour, state what a given input would produce for a given function, and confirm or reject THEIR stated hypothesis only after they have committed to it in writing.
+- Keep turns to 2–5 sentences. One point per turn. Markdown fine; no code blocks longer than three lines, and never the fix.
+${locked
+    ? '- STAGE: the candidate has NOT submitted a hypothesis yet. Refuse to discuss this codebase at all. Tell them, once and politely, to read the files and write their own hypothesis in step 1 first — that is the point of the round. Answer nothing else about the code until then.'
+    : `- STAGE: the hypothesis is submitted; assist within the rules above.
+THEIR HYPOTHESIS (verbatim): "${hypothesis.trim() || '(empty)'}"`}
+
+${stage === 'grade' ? `GRADING — they have ended the round. Give a short debrief against four attributes, each scored 1.0–4.0, and be specific about THIS transcript:
+1. Code reading — did they navigate the files and explain the data flow, or guess?
+2. Hypothesis quality — was it specific (file, mechanism, predicted failing input) and formed BEFORE using you? A vague or absent hypothesis caps this at 2.0.
+3. Fix correctness — does their edit address the root cause without breaking the rest, and did they say how they would test it?
+4. Prompt precision — were their questions to you specific and validated against the code, or did they fish for the answer? Asking you to find the bug outright caps this at 2.0.
+Then reveal the root cause and the fix plainly, and name the one habit that would most improve the next round.` : ''}
+
+ELAPSED: ~${elapsedMin} min of 60. Phases you should steer toward: 0–20 read and form a hypothesis · 20–40 fix and verify · 40–52 the follow-up feature · 52–60 the optimisation.
+
+THE FILES AS THEY STAND NOW (the candidate may have edited them)
+${source}
+${SCORING}
+${GRADE_FORMAT}`;
+}
+
 export function buildDesignInterviewerPrompt(promptId: string, elapsedMin: number, diagramText: string, designDoc: string, mode: 'practice' | 'mock'): string {
   const dp = DESIGN_PROMPT_BY_ID[promptId];
   const phase = DESIGN_PHASES.find(ph => elapsedMin >= ph.startMin && elapsedMin < ph.endMin) ?? DESIGN_PHASES[DESIGN_PHASES.length - 1];
@@ -185,8 +236,8 @@ Answer directly and plainly, with examples. When asked about a task, say (1) wha
 The one limit: for DSA problems explain the approach and the pattern, never a full solution — on the DSA tab you become the coach and see their code.
 
 HOW THE APP WORKS
-- One assistant (this panel) for every tab: Guide here; Coach on the DSA tab (sees the code and the problem's field notes); Interviewer on System Design (sees the whiteboard + design doc), Behavioural, and in every Mock round (graded 1.0–4.0 when the user ends the round).
-- Tabs: Today (the current plan day's tasks), DSA (editor + problems by pattern), System Design (whiteboard + design doc), Behavioural (12 STAR stories), Mocks (timed graded rounds + history), Plan (all 27 weeks, phase gates, referral map, start date), Notes (the user's own notebook — they copy a question or topic in and write their answer; grouped by plan week).
+- One assistant (this panel) for every tab: Guide here; Coach on the DSA tab (sees the code and the problem's field notes); Interviewer on System Design (sees the whiteboard + design doc), Behavioural, Comprehension, and in every Mock round (graded 1.0–4.0 when the user ends the round).
+- Tabs: Today (the current plan day's tasks), DSA (editor + problems by pattern), System Design (whiteboard + design doc), Behavioural (12 STAR stories), Mocks (timed graded rounds + history), Comprehension (an unfamiliar multi-file codebase with one planted bug: 60 minutes to read it, write a hypothesis, fix it, add a feature and optimise — the assistant there refuses to discuss the code until the hypothesis is submitted, then grades), Plan (all 27 weeks, phase gates, referral map, start date), Notes (the user's own notebook — they copy a question or topic in and write their answer; grouped by plan week).
 - Checkboxes: "mastered" on a DSA problem is pass 1; "Due for revision" brings it back after 7 → 14 → 30 days. Tasks made of problems tick themselves when the required problems are mastered (a "bonus" third problem never blocks); "revise" ticks itself when nothing is due; other tasks the user ticks by hand once done. When a whole day is done, Today moves on and the ready date comes forward.
 - A pattern week: Mon theory 1 hr + the week's template + 2 easy · Tue–Fri 15-min recap + 2 problems (easy → medium) + optional bonus · Sat timed set of 3 as graded rounds · Sun 2 hards + rewrite the template from memory + wrap-up. Maintenance weeks (deload, system design, behavioural, mock loops) keep DSA to one problem a day.
 - Resume "XYZ" form: "Accomplished X, as measured by Y, by doing Z" — every bullet gets a number. STAR = Situation, Task, Action, Result — weight on Action and Result, two minutes per story, "I" not "we". Gates are the exit conditions of a phase: tick a gate line only when it is actually true.

@@ -4,7 +4,7 @@
 // Best-effort: a missing tracker or a failed request is silent.
 // ======================================================
 
-export type GoogleTrackAction = 'save' | 'mastered' | 'unmastered' | 'revised' | 'design' | 'story' | 'mock' | 'day' | 'gate' | 'drill' | 'referral' | 'apply';
+export type GoogleTrackAction = 'save' | 'mastered' | 'unmastered' | 'revised' | 'design' | 'story' | 'mock' | 'day' | 'gate' | 'drill' | 'referral' | 'apply' | 'comprehension';
 
 export function trackGoogle(action: GoogleTrackAction, details: string): void {
   if (typeof window === 'undefined' || !details) return;

@@ -6,7 +6,7 @@
 
 import type { Language } from '@/lib/types';
 
-export type GoogleTab = 'today' | 'dsa' | 'design' | 'behavioural' | 'mocks' | 'plan' | 'notes';
+export type GoogleTab = 'today' | 'dsa' | 'design' | 'behavioural' | 'mocks' | 'comprehension' | 'plan' | 'notes';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -120,7 +120,7 @@ export interface DeepLink {
   theory?: boolean;      // dsa tab: open the section's pattern notes instead of a problem
 }
 
-export type TaskKind = 'theory' | 'solve' | 'revise' | 'timed' | 'drill' | 'template' | 'admin' | 'design' | 'behavioural' | 'mock' | 'outreach' | 'apply' | 'special' | 'rest';
+export type TaskKind = 'theory' | 'solve' | 'revise' | 'timed' | 'drill' | 'template' | 'admin' | 'design' | 'behavioural' | 'mock' | 'comprehension' | 'outreach' | 'apply' | 'special' | 'rest';
 
 export interface PlanTask {
   id: string;
@@ -182,10 +182,25 @@ export interface MockResult {
 export interface DrillResult { date: string; correct: number; total: number }
 
 export type ContactStatus = 'mapped' | 'asked' | 'replied' | 'referred' | 'declined';
-export interface Contact { id: string; name: string; via: string; status: ContactStatus; note: string; updated: string }
+/** `link` is their LinkedIn / X profile (optional — older entries have none). */
+export interface Contact { id: string; name: string; via: string; status: ContactStatus; note: string; link?: string; updated: string }
 
 export type ApplicationStatus = 'applied' | 'recruiter' | 'phone' | 'onsite' | 'offer' | 'rejected';
 export interface Application { id: string; role: string; date: string; status: ApplicationStatus; note: string }
+
+// ── Code comprehension ──────────────────────────────
+/** One attempt at a comprehension exercise. `code` is file name → the user's edited source. */
+export interface ComprehensionRun {
+  hypothesis: string;
+  code: Record<string, string>;
+  score: number | null;
+  minutes: number;
+  date: string;
+  /** The interviewer's written debrief, kept for revision */
+  feedback?: string;
+  /** Set once the root cause has been revealed — the exercise cannot be "unseen" */
+  revealed?: boolean;
+}
 
 // ── Notebook ────────────────────────────────────────
 /** A free-form note the user writes (a question + their answer, theory, anything). */
@@ -210,6 +225,7 @@ export interface GoogleState {
   contacts: Contact[];                     // referral map
   applications: Application[];
   notebook: NotebookNote[];                // the Notes tab
+  comprehension: Record<string, ComprehensionRun>; // exercise id → the attempt
   theory: Record<string, string>;          // section id → pattern notes as the user rewrote them (absent = the built-in notes)
   sketches: Record<string, string>;        // section id → excalidraw scene drawn under the pattern notes
 }
@@ -232,6 +248,7 @@ export const EMPTY_GOOGLE_STATE: GoogleState = {
   contacts: [],
   applications: [],
   notebook: [],
+  comprehension: {},
   theory: {},
   sketches: {},
 };

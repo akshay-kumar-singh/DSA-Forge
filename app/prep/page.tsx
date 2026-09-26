@@ -24,6 +24,7 @@ import GoogleDSA from '@/components/google/dsa/GoogleDSA';
 import DesignPage from '@/components/google/design/DesignPage';
 import BehaviouralPage from '@/components/google/behavioural/BehaviouralPage';
 import MocksPage from '@/components/google/mocks/MocksPage';
+import ComprehensionPage from '@/components/google/comprehension/ComprehensionPage';
 import NotesPage from '@/components/google/notes/NotesPage';
 import GoogleChatPanel, { type QuickAction } from '@/components/google/shared/GoogleChatPanel';
 import { useAssistant, type AssistantConfig } from '@/components/google/shared/useAssistant';
@@ -31,7 +32,7 @@ import { buildGuidePrompt } from '@/lib/google/ai';
 import { Sparkles } from 'lucide-react';
 import ForgeSettings from '@/components/forge/settings/ForgeSettings';
 
-const TABS: GoogleTab[] = ['today', 'dsa', 'design', 'behavioural', 'mocks', 'plan', 'notes'];
+const TABS: GoogleTab[] = ['today', 'dsa', 'design', 'behavioural', 'mocks', 'comprehension', 'plan', 'notes'];
 
 const GUIDE_ACTIONS: QuickAction[] = [
   { label: 'Explain today', msg: "Explain each of today's tasks: what it means, exactly what I do, and where in the app." },
@@ -146,7 +147,7 @@ export default function InterviewPrepPage() {
   // Warm the heavier tabs in the background once the first paint is done, so the
   // first click on DSA / Plan / Mocks is instant. Design (Excalidraw) stays lazy.
   useEffect(() => {
-    const order: GoogleTab[] = ['dsa', 'plan', 'mocks', 'behavioural', 'notes'];
+    const order: GoogleTab[] = ['dsa', 'plan', 'mocks', 'behavioural', 'notes', 'comprehension'];
     const timers: ReturnType<typeof setTimeout>[] = [];
     order.forEach((t, i) => timers.push(setTimeout(() => setVisited(v => (v.has(t) ? v : new Set(v).add(t))), 1200 + i * 700)));
     return () => timers.forEach(clearTimeout);
@@ -256,6 +257,11 @@ export default function InterviewPrepPage() {
         {visited.has('mocks') && (
           <div hidden={tab !== 'mocks'} className="h-full min-h-0 gp-pane">
             <MocksPage {...common} ai={ai.handles.mocks} onToggleTheme={toggleTheme} editorFontSize={fontSize} editorFontFamily={fontFamily} onOpenSettings={() => setShowSettings(true)} focus={focusFor('mocks')} />
+          </div>
+        )}
+        {visited.has('comprehension') && (
+          <div hidden={tab !== 'comprehension'} className="h-full min-h-0 gp-pane">
+            <ComprehensionPage {...common} ai={ai.handles.comprehension} editorFontSize={fontSize} editorFontFamily={fontFamily} focus={focusFor('comprehension')} />
           </div>
         )}
         {visited.has('plan') && (

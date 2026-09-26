@@ -12,6 +12,7 @@ import { sectionById } from './problems';
 import { getDueProblems } from '@/lib/revision';
 import { DESIGN_PROMPT_BY_ID } from './system-design';
 import { STORY_SEEDS } from './behavioural';
+import { COMPREHENSION_BY_ID, exerciseLines } from './comprehension';
 import { PLAN_WEEKS } from './plan';
 
 export function resolveTaskItems(task: PlanTask, state: GoogleState): TaskItem[] {
@@ -48,6 +49,17 @@ export function resolveTaskItems(task: PlanTask, state: GoogleState): TaskItem[]
         const st = state.stories[s.id];
         return { label: s.title, sub: s.drawFrom, link: { tab: 'behavioural', id: s.id }, done: !!(st && st.situation && st.action && st.result) };
       });
+    }
+    case 'comprehension': {
+      const ex = task.link?.id ? COMPREHENSION_BY_ID[task.link.id] : undefined;
+      if (!ex) return [];
+      const run = state.comprehension[ex.id];
+      return [{
+        label: ex.title,
+        sub: `${ex.difficulty} · ${ex.files.length} files · ${exerciseLines(ex)} lines${run?.score != null ? ` · scored ${run.score.toFixed(1)}` : ''}`,
+        link: { tab: 'comprehension', id: ex.id },
+        done: !!run && run.score != null,
+      }];
     }
     case 'mock': {
       const kind = task.link?.kind ?? 'coding';

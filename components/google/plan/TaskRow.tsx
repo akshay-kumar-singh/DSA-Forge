@@ -15,6 +15,7 @@ export const KIND: Record<PlanTask['kind'], { label: string; chip: string }> = {
   design: { label: 'Design', chip: 'gp-chip-green' },
   behavioural: { label: 'Behavioural', chip: 'gp-chip-purple' },
   mock: { label: 'Mock', chip: 'gp-chip-red' },
+  comprehension: { label: 'Comprehension', chip: 'gp-chip-red' },
   outreach: { label: 'Referrals', chip: 'gp-chip-yellow' },
   apply: { label: 'Apply', chip: 'gp-chip-red' },
   special: { label: 'Setup', chip: '' },

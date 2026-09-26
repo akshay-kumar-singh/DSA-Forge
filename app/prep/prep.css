@@ -249,3 +249,13 @@
 
 /* Pattern-notes editor: markdown source next to the live preview */
 .gp-md-editor { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; tab-size: 2; resize: none; }
+
+/* Horizontal scroll as a last resort, without an ugly scrollbar in the header */
+.gp-scroll-x { overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.gp-scroll-x::-webkit-scrollbar { display: none; }
+/* Header tabs: the tab you are on always names itself; the others do too once the
+   window is wide enough for all of them. Below that they are icons with tooltips,
+   so the header never scrolls and never wraps. */
+.gp-tab-label { display: none; }
+@media (min-width: 768px) { .gp-tab-active .gp-tab-label { display: inline; } }
+@media (min-width: 1440px) { .gp-tab-label { display: inline; } }

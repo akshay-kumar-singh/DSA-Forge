@@ -13,6 +13,8 @@ import type { Message, Language, AIProvider, View } from '@/lib/types';
 
 const TOTAL_PROBLEMS = DSA_PATTERNS.reduce((acc, p) => acc + p.problems.length, 0);
 const ALL_PROBLEMS = new Set(DSA_PATTERNS.flatMap(p => p.problems));
+/** What a first-time visitor opens on (own problems now live in the Practice Lab at /practice). */
+const FIRST_PROBLEM = DSA_PATTERNS[0].problems[0];
 const LANGUAGES: Language[] = ['javascript', 'python', 'java', 'cpp'];
 
 let _msgIdCounter = 0;
@@ -72,7 +74,7 @@ export default function DSAForge() {
   }, []);
 
   // ── Problem State ───────────────────────────────────
-  const [selectedProblem, setSelectedProblem] = useState("Training: Custom Sandbox");
+  const [selectedProblem, setSelectedProblem] = useState(FIRST_PROBLEM);
   const [masteredProblems, setMasteredProblems] = useState<string[]>([]);
   const [lastReviewDate, setLastReviewDate] = useState<Record<string, string>>({});
   const [reviewCount, setReviewCount] = useState<Record<string, number>>({});

@@ -263,3 +263,29 @@ body {
   justify-content: center;
 }
 .forge-resize-handle:hover { background: var(--accent-soft); }
+
+/* ── Landing page ─────────────────────────────────
+   Everything (three track cards included) has to fit one screen without
+   scrolling on a laptop, so the vertical rhythm is driven by viewport
+   HEIGHT: tight by default, roomier as the screen gets taller. */
+.landing-shell { padding-block: 1.25rem; }
+.landing-stack { gap: 0.9rem; }
+.landing-title { font-size: clamp(2.5rem, 6.5vh + 1rem, 6rem); }
+.landing-tagline { font-size: 0.9rem; }
+.landing-badge, .landing-pills { display: none; }
+
+@media (min-height: 720px) {
+  .landing-shell { padding-block: 1.75rem; }
+  .landing-stack { gap: 1.1rem; }
+  .landing-pills { display: flex; }
+}
+@media (min-height: 840px) {
+  .landing-shell { padding-block: 2.5rem; }
+  .landing-stack { gap: 1.5rem; }
+  .landing-badge { display: flex; }
+  .landing-tagline { font-size: 1rem; }
+}
+@media (min-height: 980px) {
+  .landing-shell { padding-block: 4rem; }
+  .landing-stack { gap: 2rem; }
+}

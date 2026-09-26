@@ -99,6 +99,25 @@ export const PLAN_PHASES: PlanPhase[] = [
   },
 ];
 
+/**
+ * Code comprehension — five 60-minute sessions, all on a weekend day, easy → hard.
+ * They are appended to each week's specials (never inserted before an existing one)
+ * so every task id already in planDone keeps its meaning, and they add no days:
+ * the plan is still week 0 + 26 weeks.
+ *   W8  Sun — deload weekend, right after the pattern-foundations gate
+ *   W11 Sat — mid hard-core; that Saturday carries only the timed set
+ *   W16 Sat — one more round of full mock loop #1
+ *   W20 Sun — behavioural week, a light Sunday
+ *   W24 Sun — interview mode, at full difficulty
+ */
+const COMPREHENSION_SPECIAL: NonNullable<PlanWeek['specials']> = [
+  { day: 6, kind: 'comprehension', text: 'Code comprehension #1 (60 min) — an unfamiliar multi-file codebase with one planted bug. Read it, write your hypothesis BEFORE you open the assistant, then fix it.', link: { tab: 'comprehension', id: 'orders-pagination' } },
+  { day: 5, kind: 'comprehension', text: 'Code comprehension #2 (60 min). Same shape: hypothesis first, then the fix, then the follow-up feature.', link: { tab: 'comprehension', id: 'catalog-cache' } },
+  { day: 5, kind: 'comprehension', text: 'Loop round — code comprehension (60 min), straight after the mock rounds. This is what the real loop day feels like.', link: { tab: 'comprehension', id: 'inventory-race' } },
+  { day: 6, kind: 'comprehension', text: 'Code comprehension #4 (60 min) — a hard one. Aim for a hypothesis inside 20 minutes.', link: { tab: 'comprehension', id: 'search-debounce' } },
+  { day: 6, kind: 'comprehension', text: 'Code comprehension #5 (60 min) — full difficulty, graded. Drive all four phases: read, fix, feature, optimise.', link: { tab: 'comprehension', id: 'batch-worker' } },
+];
+
 export const PLAN_WEEKS: PlanWeek[] = [
   { week: 0, phase: 'P0', theme: 'Setup', detail: 'Three short days: learn how the app runs the plan, fix the resume, map the referral network. Week 1 starts on the first Monday after.', sections: [],
     specials: [
@@ -126,10 +145,11 @@ export const PLAN_WEEKS: PlanWeek[] = [
   { week: 6, phase: 'P1', theme: 'Linked lists, fast & slow pointers', detail: 'Reversal, cycles, merge, reorder, LRU.', sections: ['linked-list'] },
   { week: 7, phase: 'P1', theme: 'Heaps & top-K', detail: 'K-way merge, streaming median, scheduling. Template: MinHeap.', sections: ['heaps'] },
   { week: 8, phase: 'P1', theme: 'Deload & consolidate', detail: 'No new patterns. One extra a day from weeks 1–7, clear the revision ladder, first mock interview.', sections: [], maintenance: true,
-    specials: [{ day: 5, text: 'First mock interview — one 45-minute coding round.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }, { day: 6, kind: 'admin', text: 'Gate 1 check: three unseen mediums from patterns 1–7 in under 30 minutes each, on different days; the three templates from memory.', link: { tab: 'plan' } }] },
+    specials: [{ day: 5, text: 'First mock interview — one 45-minute coding round.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }, { day: 6, kind: 'admin', text: 'Gate 1 check: three unseen mediums from patterns 1–7 in under 30 minutes each, on different days; the three templates from memory.', link: { tab: 'plan' } }, COMPREHENSION_SPECIAL[0]] },
   { week: 9, phase: 'P2', theme: 'Binary trees', detail: 'All traversals recursive and iterative, depth, path sums, diameter.', sections: ['trees'] },
   { week: 10, phase: 'P2', theme: 'BSTs & tree construction', detail: 'Validation, LCA, serialise/deserialise, build from traversals.', sections: ['bst'] },
-  { week: 11, phase: 'P2', theme: 'Backtracking', detail: 'Subsets, permutations, combinations, N-queens, word search, sudoku.', sections: ['backtracking'] },
+  { week: 11, phase: 'P2', theme: 'Backtracking', detail: 'Subsets, permutations, combinations, N-queens, word search, sudoku.', sections: ['backtracking'],
+    specials: [COMPREHENSION_SPECIAL[1]] },
   { week: 12, phase: 'P2', theme: 'Graphs I — BFS/DFS', detail: 'Grids and adjacency lists, components, multi-source BFS. Weekly mocks start now.', sections: ['graphs-1'],
     specials: [{ day: 5, text: 'Weekly mock starts: one 45-minute coding round.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }] },
   { week: 13, phase: 'P2', theme: 'Graphs II', detail: 'Topological sort, Union-Find, bipartite checking, Dijkstra. Template: UnionFind.', sections: ['graphs-2'],
@@ -139,7 +159,7 @@ export const PLAN_WEEKS: PlanWeek[] = [
   { week: 15, phase: 'P2', theme: 'DP II — two dimensions', detail: 'Grid paths, edit distance, LCS, knapsack, interval DP.', sections: ['dp-2'],
     specials: [{ day: 5, text: 'Weekly mock: one 45-minute coding round.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }] },
   { week: 16, phase: 'P2', theme: 'Tries, bit manipulation, intervals — then deload', detail: 'Template: Trie. Full mock loop #1 on Saturday.', sections: ['tries-bits-intervals'],
-    specials: [{ day: 5, text: 'Full mock loop #1 — 3 coding rounds + 1 behavioural, back to back.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }, { day: 6, kind: 'admin', text: 'Gate 2 check: any unseen medium < 30 min; any graph < 25 min; a 2-D DP without looking up the recurrence; the three templates from memory.', link: { tab: 'plan' } }] },
+    specials: [{ day: 5, text: 'Full mock loop #1 — 3 coding rounds + 1 behavioural, back to back.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }, COMPREHENSION_SPECIAL[2], { day: 6, kind: 'admin', text: 'Gate 2 check: any unseen medium < 30 min; any graph < 25 min; a 2-D DP without looking up the recurrence; the three templates from memory.', link: { tab: 'plan' } }] },
   { week: 17, phase: 'P3', theme: 'System design fundamentals', detail: 'Every concept in §7. Estimation drills until the arithmetic is instant. DSA drops to one problem a day.', sections: [], maintenance: true,
     specials: [
       { day: 0, kind: 'design', text: 'System design: load balancing, caching & eviction, CDN — write one page of notes each.', link: { tab: 'design' } },
@@ -179,6 +199,7 @@ export const PLAN_WEEKS: PlanWeek[] = [
       { day: 4, text: 'APPLICATIONS GO OUT: Software Engineer II reqs (Payments first). Referral + direct application in the same week — log each one.', link: { tab: 'plan', id: 'outreach' } },
       { day: 5, text: 'Behavioural mock: 4 questions with the AI interviewer. Start interviewing elsewhere — parallel funnel.', kind: 'mock', link: { tab: 'mocks', kind: 'behavioural' } },
       { day: 6, text: 'Fix the two weakest stories. Confirm every application and referral is logged in the tracker.', kind: 'behavioural', link: { tab: 'plan', id: 'outreach' } },
+      COMPREHENSION_SPECIAL[3],
     ] },
   { week: 21, phase: 'P3', theme: 'Company flavour', detail: 'Open-ended problems, layered follow-ups, design-and-implement hybrids, hard problems. Design stays warm: two stretch prompts this week, starting with payments.', sections: ['google-flavour'],
     specials: [
@@ -196,7 +217,7 @@ export const PLAN_WEEKS: PlanWeek[] = [
   { week: 23, phase: 'P4', theme: 'Two timed problems daily', detail: '45 min each, out loud, as graded rounds. Two mocks this week, one stretch design.', sections: [], maintenance: true,
     specials: [{ day: 0, kind: 'design', text: 'Design re-run: Cloud file sync — full 45-minute run + doc.', link: { tab: 'design', id: 'file-storage' } }, { day: 2, text: 'Mock #1 this week — coding.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }, { day: 5, text: 'Mock #2 this week — coding or design.', kind: 'mock', link: { tab: 'mocks', kind: 'design' } }] },
   { week: 24, phase: 'P4', theme: 'Company-tagged problems', detail: 'The rest of the Company-flavour section. Full spaced-repetition sweep of everything flagged. Two stretch designs.', sections: ['google-flavour'], maintenance: true,
-    specials: [{ day: 1, kind: 'design', text: 'Design re-run: Metrics & monitoring — full 45-minute run + doc.', link: { tab: 'design', id: 'metrics' } }, { day: 3, kind: 'design', text: 'Design re-run: Collaborative document editing — full 45-minute run + doc.', link: { tab: 'design', id: 'collab-editing' } }, { day: 5, text: 'Mock: one coding round.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }] },
+    specials: [{ day: 1, kind: 'design', text: 'Design re-run: Metrics & monitoring — full 45-minute run + doc.', link: { tab: 'design', id: 'metrics' } }, { day: 3, kind: 'design', text: 'Design re-run: Collaborative document editing — full 45-minute run + doc.', link: { tab: 'design', id: 'collab-editing' } }, { day: 5, text: 'Mock: one coding round.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }, COMPREHENSION_SPECIAL[4]] },
   { week: 25, phase: 'P4', theme: 'Full mock loop #3', detail: 'Real interviews elsewhere as live reps. Refine the behavioural stories. Last stretch design.', sections: [], maintenance: true,
     specials: [{ day: 1, kind: 'design', text: 'Design re-run: Video streaming — full 45-minute run + doc.', link: { tab: 'design', id: 'video-streaming' } }, { day: 4, text: 'Full mock loop #3, part 1: 2 coding rounds.', kind: 'mock', link: { tab: 'mocks', kind: 'coding' } }, { day: 5, text: 'Full mock loop #3, part 2: 1 coding + 1 design + 1 behavioural.', kind: 'mock', link: { tab: 'mocks', kind: 'behavioural' } }, { day: 6, text: 'Refine the behavioural stories from the loop feedback.', kind: 'behavioural', link: { tab: 'behavioural' } }] },
   { week: 26, phase: 'P4', theme: 'Taper', detail: 'One problem a day, reread notes, sleep properly. You are ready.', sections: [], maintenance: true,

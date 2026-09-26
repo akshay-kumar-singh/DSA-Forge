@@ -12,14 +12,14 @@ import type { GoogleTrackAction } from '@/lib/google/track';
 const LABEL: Record<GoogleTrackAction, string> = {
   save: '📝 Save', mastered: '✅ Mastered', unmastered: '🔄 Unmastered', revised: '📚 Revised',
   design: '🏗️ Design', story: '💬 Story', mock: '🎤 Mock', day: '📅 Day done', gate: '🚩 Gate',
-  drill: '⚡ Drill', referral: '🤝 Referral', apply: '📨 Applied',
+  drill: '⚡ Drill', referral: '🤝 Referral', apply: '📨 Applied', comprehension: '🔍 Comprehension',
 };
 
 interface Activity { timestamp: string; action: GoogleTrackAction; details: string; date: string }
 type Counter = Record<GoogleTrackAction, number>;
 interface Stats { totals: Counter; dailyStats: Record<string, Counter> }
 
-const zero = (): Counter => ({ save: 0, mastered: 0, unmastered: 0, revised: 0, design: 0, story: 0, mock: 0, day: 0, gate: 0, drill: 0, referral: 0, apply: 0 });
+const zero = (): Counter => ({ save: 0, mastered: 0, unmastered: 0, revised: 0, design: 0, story: 0, mock: 0, day: 0, gate: 0, drill: 0, referral: 0, apply: 0, comprehension: 0 });
 
 export async function POST(req: Request) {
   try {
